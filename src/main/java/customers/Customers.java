@@ -8,10 +8,13 @@ import java.awt.event.*;
 import java.util.ArrayList;
 import carrentalsystemmain.*;
 import reservation.*;
+import database.DBConnection;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 
 public class Customers extends JPanel implements Searchable {
-    static  ArrayList<CustomerMethods> customerList = new ArrayList<>();
-
+    
     private JTextField txtId, txtName, txtPhone, txtLicense, txtAddress, txtSearch;
     
 
@@ -133,96 +136,105 @@ public class Customers extends JPanel implements Searchable {
         UIManager.put("OptionPane.messageFont",new Font("Poppins", Font.BOLD, 14));
         
         btnAdd.addActionListener(e -> {
-            if(txtId.getText().isEmpty()) {
-                JOptionPane.showMessageDialog(null, "ID cannot be empty.","Error", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-            int id;
-            try {
-                id = Integer.parseInt(txtId.getText());
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(null, "ID must be a number.","Error", JOptionPane.WARNING_MESSAGE);
-                return;
-            } 
-           StringBuilder missing = new StringBuilder();
+        try {
+             Connection conn = DBConnection.getConnection();
 
-            if(txtName.getText().isEmpty()) missing.append("Fullname, ");
-            if(txtPhone.getText().isEmpty()) missing.append("Phone Number, ");
-            if(txtLicense.getText().isEmpty()) missing.append("Driver's License, ");
-            if(txtAddress.getText().isEmpty()) missing.append("Address, ");
+             String sql = "INSERT INTO customer_book(name, phone, drivers_license, address) "
+                         + "VALUES (?, ?, ?, ?)";
 
-            if(missing.length() > 0){
-                JOptionPane.showMessageDialog(null,"Missing fields: " + missing.substring(0, missing.length() - 2));
-                   return;
-}        
-            for(CustomerMethods c : customerList){
-                if(c.getId() == id){
-                    JOptionPane.showMessageDialog(null, "Customer with this ID already exists.","Error", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
-            }
-            CustomerMethods c = new CustomerMethods(
-                id,
-                txtName.getText(),
-                txtPhone.getText(),
-                txtLicense.getText(),
-                txtAddress.getText()            
-            );
-            customerList.add(c);
-            JOptionPane.showMessageDialog(null, "Customer added.","Successful", JOptionPane.PLAIN_MESSAGE);
-            clearFields();
-        });
+         PreparedStatement pst = conn.prepareStatement(sql);
 
+         pst.setString(1, txtName.getText());
+         pst.setString(2, txtPhone.getText());
+         pst.setString(3, txtLicense.getText());
+         pst.setString(4, txtAddress.getText()); 
+
+         pst.executeUpdate();
+         conn.close();
+        JOptionPane.showMessageDialog(null, "Customer added!");
+        clearFields();
+    } catch (Exception ex) {
+        ex.printStackTrace();
+        JOptionPane.showMessageDialog(null, "Error: " + ex.getMessage());
+     }
+  });
+        
         btnUpdate.addActionListener(e -> {
-            if(txtId.getText().isEmpty()){
-                JOptionPane.showMessageDialog(null, "ID is required to update.","Error", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-            int id;
-            try {
-                id = Integer.parseInt(txtId.getText());
-            } catch(NumberFormatException ex){
-                JOptionPane.showMessageDialog(null, "ID must be a number.","Error", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-            CustomerMethods found = null;
-            for(CustomerMethods c : customerList){
-                if(c.getId() == id){
-                    found = c;
-                    break;
-                }
-            }
-            if(found == null){
-                JOptionPane.showMessageDialog(null, "Customer not found.","Error", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-            found.setName(txtName.getText());
-            found.setPhone(txtPhone.getText());
-            found.setLicense(txtLicense.getText());
-            found.setAddress(txtAddress.getText());
-            JOptionPane.showMessageDialog(null, "Customer updated.","Updates", JOptionPane.PLAIN_MESSAGE);
-            clearFields();
-        });
+        if (txtId.getText().trim().isEmpty()) {
+             JOptionPane.showMessageDialog(null, "Customer ID is required.", "Error",JOptionPane.WARNING_MESSAGE);
+        return;
+    }
+        try {
+            Connection conn = DBConnection.getConnection();
 
-        btnDelete.addActionListener(e -> {
+            String sql =
+                "UPDATE customer_book "
+                + "SET name = ?, "
+                + "phone = ?, "
+                + "drivers_license = ?, "
+                + "address = ? "
+                + "WHERE cus_book_id = ?";
+
+        PreparedStatement pst = conn.prepareStatement(sql);
+
+        pst.setString(1, txtName.getText());
+        pst.setString(2, txtPhone.getText());
+        pst.setString(3, txtLicense.getText());
+        pst.setString(4, txtAddress.getText());
+
+        pst.setInt(5, Integer.parseInt(txtId.getText()));
+
+        int rowsUpdated = pst.executeUpdate();
+        conn.close();
+
+        if (rowsUpdated > 0) {
+            JOptionPane.showMessageDialog(null, "Customer updated successfully."
+            );
+            clearFields();
+        } else {
+            JOptionPane.showMessageDialog(null,"Customer not found.");
+        }
+    } catch (NumberFormatException ex) {
+        JOptionPane.showMessageDialog(null,"Customer ID must be a number.");
+    } catch (Exception ex) {
+        ex.printStackTrace();
+        JOptionPane.showMessageDialog(null,"Error: " + ex.getMessage());
+    }
+});
+        
+      btnDelete.addActionListener(e -> {
             if(txtId.getText().isEmpty()){
                 JOptionPane.showMessageDialog(null, "ID is required to delete.","Error", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            int id;
-            try {
-                id = Integer.parseInt(txtId.getText());
-            } catch(NumberFormatException ex){
-                JOptionPane.showMessageDialog(null, "ID must be a number.","Error", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-            boolean removed = customerList.removeIf(c -> c.getId() == id);
-            if(removed){
-                JOptionPane.showMessageDialog(null, "Customer deleted.","Error", JOptionPane.PLAIN_MESSAGE);
-                clearFields();
-            } else {
-                JOptionPane.showMessageDialog(null, "Customer not found.","Error", JOptionPane.PLAIN_MESSAGE);
-            }
+          try {
+             int id = Integer.parseInt(txtId.getText().trim());
+             Connection conn = DBConnection.getConnection();
+            String sql =
+                "DELETE FROM customer_book WHERE cus_book_id = ?";
+            PreparedStatement pst =
+                conn.prepareStatement(sql);
+                    pst.setInt(1, id);
+
+                int rowsDeleted = pst.executeUpdate();
+                    conn.close();
+
+             if (rowsDeleted > 0) {
+                JOptionPane.showMessageDialog(null, "Customer deleted successfully."
+            );
+            clearFields();
+        } else {
+            JOptionPane.showMessageDialog(null, "Customer not found."
+            );
+        }
+    } catch (NumberFormatException ex) {
+         JOptionPane.showMessageDialog(null, "Customer ID must be a number."
+        );
+    } catch (Exception ex) {
+        ex.printStackTrace();
+        JOptionPane.showMessageDialog(null, "Error: " + ex.getMessage()
+        );
+    }
         });
 
         btnClear.addActionListener(e -> clearFields());
@@ -257,41 +269,96 @@ public class Customers extends JPanel implements Searchable {
 
         btnView.addActionListener(e -> {
             String keyword = txtSearch.getText().trim();
-            if(keyword.isEmpty()){
-                JOptionPane.showMessageDialog(null, "Enter ID or Fullname to search before viewing.","Error", JOptionPane.OK_OPTION);
-                return;
-            }
-            ArrayList<CustomerMethods> results = searchResults(keyword);
-            if(results.isEmpty()){
-                JOptionPane.showMessageDialog(null, "No customer found.","Error", JOptionPane.OK_OPTION);
-            } else if(results.size() == 1){
-                CustomerMethods c = results.get(0);
-                showCustomerDetails(c);
-            } else {
-                String[] options = new String[results.size()];
-                for(int i=0; i<results.size(); i++){
-                    options[i] = results.get(i).getId() + " - " + results.get(i).getName();
-                }
-                String choice = (String) JOptionPane.showInputDialog(this, 
-                    "Multiple customers found. Select one:", "Select Customer",
-                    JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
-                if(choice != null){
-                    int chosenId = Integer.parseInt(choice.split(" - ")[0]);
-                    CustomerMethods chosen = null;
-                    for(CustomerMethods c : results){
-                        if(c.getId() == chosenId){
-                            chosen = c;
-                            break;
-                        }
-                    }
-                    if(chosen != null){
-                        showCustomerDetails(chosen);
-                    }
-                }
-            }
-        });
-    }
+        if (keyword.isEmpty()) {
+        JOptionPane.showMessageDialog(null,"Enter Customer ID or Name.","Error", JOptionPane.WARNING_MESSAGE );
+        return;
+    } try {
 
+        Connection conn = DBConnection.getConnection();
+        String sql =
+                "SELECT * FROM customer_book "
+              + "WHERE cus_book_id = ? OR name LIKE ?";
+
+        PreparedStatement pst =
+                conn.prepareStatement(sql);
+
+        pst.setString(1, keyword);
+        pst.setString(2, "%" + keyword + "%");
+
+        ResultSet rs = pst.executeQuery();
+        StringBuilder details = new StringBuilder();
+
+        while (rs.next()) {
+            details.append("Customer ID: ")
+                   .append(rs.getInt("cus_book_id"))
+                   .append("\n")
+
+                   .append("Name: ")
+                   .append(rs.getString("name"))
+                   .append("\n")
+
+                   .append("Phone: ")
+                   .append(rs.getString("phone"))
+                   .append("\n")
+
+                   .append("Email: ")
+                   .append(rs.getString("email"))
+                   .append("\n")
+
+                   .append("License: ")
+                   .append(rs.getString("drivers_license"))
+                   .append("\n")
+
+                   .append("Address: ")
+                   .append(rs.getString("address"))
+                   .append("\n\n");
+        }
+        conn.close();
+
+        if (details.length() == 0) {
+            JOptionPane.showMessageDialog(null,"No customer found.");
+        } else {
+            JOptionPane.showMessageDialog(null,details.toString(), "Customer Details", JOptionPane.INFORMATION_MESSAGE);
+        }
+    } catch (Exception ex) {
+        ex.printStackTrace();
+        JOptionPane.showMessageDialog(null, "Database error: " + ex.getMessage());
+      }
+    });
+  }       
+    @Override
+    public void search(String keyword) {
+        try {
+        Connection conn = DBConnection.getConnection();
+
+        String sql = "SELECT * FROM customer_book WHERE cus_book_id = ? OR name LIKE ?";
+
+        PreparedStatement pst = conn.prepareStatement(sql);
+        pst.setString(1, keyword);
+        pst.setString(2, "%" + keyword + "%");
+
+        ResultSet rs = pst.executeQuery();
+
+        StringBuilder result = new StringBuilder();
+
+        while (rs.next()) {
+            result.append(rs.getInt("cus_book_id"))
+                  .append(" - ")
+                  .append(rs.getString("name"))
+                  .append("\n");
+        }
+        conn.close();
+
+        if (result.length() == 0) {
+            JOptionPane.showMessageDialog(null, "No customer found.");
+        } else {
+            JOptionPane.showMessageDialog(null, result.toString());
+        }
+    } catch (Exception ex) {
+        ex.printStackTrace();
+        JOptionPane.showMessageDialog(null, "Database error: " + ex.getMessage());
+    }
+}
     private void clearFields(){
         txtId.setText("");
         txtName.setText("");
@@ -299,62 +366,5 @@ public class Customers extends JPanel implements Searchable {
         txtLicense.setText("");
         txtAddress.setText("");
         txtSearch.setText("");
-    }
-
-    private void showCustomerDetails(CustomerMethods c){
-        JOptionPane.showMessageDialog(null,
-            "ID: " + c.getId() +
-            "\nName: " + c.getName() +
-            "\nPhone: " + c.getPhone() +
-            "\nLicense: " + c.getLicense() +
-            "\nAddress: " + c.getAddress(),
-            "Customer Details", JOptionPane.INFORMATION_MESSAGE);
-    }
-
-    @Override
-    public void search(String searchTerm){
-    ArrayList<CustomerMethods> matchedCustomers = searchResults(searchTerm);
-    
-    if(matchedCustomers.isEmpty()){
-        JOptionPane.showMessageDialog(null, "No customer found.");
-    } else {
-        StringBuilder message = new StringBuilder("Found " + matchedCustomers.size() + " customer(s):\n");
-        
-        for(CustomerMethods customer : matchedCustomers){
-            message.append(customer.getId())
-                   .append(" - ")
-                   .append(customer.getName())
-                   .append("\n");
-        }
-        
-        JOptionPane.showMessageDialog(null, message.toString());
-    }
-}
-
-    public static  ArrayList<CustomerMethods> searchResults(String keyword){
-        ArrayList<CustomerMethods> results = new ArrayList<>();
-        for(CustomerMethods c : customerList){
-            if(String.valueOf(c.getId()).equals(keyword) || c.getName().toLowerCase().contains(keyword.toLowerCase())){
-                results.add(c);
-            }
-        }
-        return results;
-    }
-    public static void addCustomer(
-            int id,
-            String name,
-            String phone,
-            String license,
-            String address) {
-
-        CustomerMethods customer = new CustomerMethods(
-                id,
-                name,
-                phone,
-                license,
-                address
-        );
-
-        customerList.add(customer);
     }
 }

@@ -192,7 +192,7 @@ if (address == null || address.trim().isEmpty()) {
 
         } catch (Exception ex) {
             ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Database Error: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
             return;
         }
 
