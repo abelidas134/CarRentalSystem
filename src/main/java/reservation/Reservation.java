@@ -6,6 +6,11 @@ import carrentalsystemmain.*;
 import billing.*;
 import vehicle.*;
 import customers.*;
+import database.DBConnection;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
 
 
 
@@ -15,11 +20,12 @@ public class Reservation extends JPanel {
 
     JTextField nameField, contactField, emailField, licenseField, addressField;
     JLabel statusLabel;
-    private String rate, name, plate, customerName;
-    public Reservation(String rate,String name, String plate) {
+    private String rate, name, plate, customerName, carId;
+    public Reservation(String rate,String name, String plate, String carId) {
         this.rate = rate;
         this.name = name;
         this.plate = plate;
+        this.carId = carId;
         setBounds(800,175,1000, 600);
 
         setLayout(null);
@@ -103,8 +109,7 @@ public class Reservation extends JPanel {
         add(addressLabel);
         add(addressField);
         
-        
-            
+                    
         add(reserveButton);
 
         add(statusLabel);
@@ -135,17 +140,70 @@ if (address == null || address.trim().isEmpty()) {
 }
         String reservationNumber = "CR-" + reservationCounter++;
         
-        Customers.addCustomer(
-               reservationCounter - 1,
-               name,
-               contact,
-               licensenum,
-               address
-       );
+        try {
+            Connection conn = DBConnection.getConnection();
 
+            String customerBookSql =
+                    "INSERT INTO customer_book(name, phone, email, drivers_license, address) "
+                    + "VALUES (?, ?, ?, ?, ?)";
+
+            PreparedStatement customerBookPst =
+                    conn.prepareStatement(customerBookSql, Statement.RETURN_GENERATED_KEYS);
+
+            customerBookPst.setString(1, name);
+            customerBookPst.setString(2, contact);
+            customerBookPst.setString(3, email);
+            customerBookPst.setString(4, licensenum);
+            customerBookPst.setString(5, address);
+
+            customerBookPst.executeUpdate();
+
+            ResultSet rs = customerBookPst.getGeneratedKeys();
+            
+            int customerBookId = 0;
+
+            if (rs.next()) {
+                customerBookId = rs.getInt(1);
+            }
+
+            String reservationSql =
+                    "INSERT INTO reservation(reservation_id, cus_book_id, car_id, pickup_date, dropoff_date, car_status_id) "
+                    + "VALUES (?, ?, ?, CURDATE(), CURDATE(), ?)";
+
+            PreparedStatement reservationPst = conn.prepareStatement(reservationSql);
+
+            reservationPst.setString(1, reservationNumber);
+            reservationPst.setInt(2, customerBookId);
+            reservationPst.setString(3, carId);
+            reservationPst.setInt(4, 2);
+
+            reservationPst.executeUpdate();
+
+            String updateCarSql = "UPDATE car SET car_status_id = ? WHERE car_id = ?";
+
+            PreparedStatement updateCarPst = conn.prepareStatement(updateCarSql);
+
+            updateCarPst.setInt(1, 2);
+            updateCarPst.setString(2, carId);
+
+            updateCarPst.executeUpdate();
+            
+             conn.close();
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Database Error: " + ex.getMessage());
+            return;
+        }
+
+        
         String details =
                 "RESERVATION DETAILS\n\n"
                 + "Reservation ID     : " + reservationNumber + "\n\n"
+                + "Vehicle ID         : " + carId + "\n\n"
+                + "Vehicle Name       : " + this.name + "\n\n"
+                + "Plate Number       : " + this.plate + "\n\n"
+                + "Rate               : " + this.rate + "\n\n"
                 + "Customer Name      : " + name + "\n\n"
                 + "Contact Number     : " + contact + "\n\n"
                 + "Email Address      : " + email + "\n\n"
@@ -164,7 +222,8 @@ if (address == null || address.trim().isEmpty()) {
                        this.rate,
                        this.name,
                        this.plate,
-                       this.customerName
+                       this.customerName,
+                       this.carId
                );
        rdf.setBounds(900, 175, 600, 600);
 

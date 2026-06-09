@@ -23,7 +23,7 @@ import javax.swing.SwingUtilities;
 public class ReservationDetailsFrame extends JPanel {
 
     JTextArea detailsArea;
-    String rate, name, plate, customerName;
+    String rate, name, plate, customerName, carId;
         
     public ReservationDetailsFrame(
             String details,
@@ -31,11 +31,13 @@ public class ReservationDetailsFrame extends JPanel {
             String rate,
             String name,
             String plate,
-            String customerName) {
+            String customerName,
+            String carId) {
             this.rate = rate;
             this.name = name;
             this.plate = plate;
             this.customerName = customerName;
+            this.carId = carId;
             
             
         setBounds(1000,100,600, 600);
@@ -71,7 +73,8 @@ public class ReservationDetailsFrame extends JPanel {
                             name,
                             plate,
                             customerName,
-                            details
+                            details,
+                            carId
                     );
             ap.setBounds(850, 200, 1366, 768);
             background.add(ap);
@@ -83,7 +86,7 @@ public class ReservationDetailsFrame extends JPanel {
             JFrame current = (JFrame) SwingUtilities.getWindowAncestor(this);
             current.dispose();
 
-            FoundationFrame ff = new FoundationFrame(new Reservation(rate, name, plate));
+            FoundationFrame ff = new FoundationFrame(new Reservation(rate, name, plate, carId));
         
         });
 

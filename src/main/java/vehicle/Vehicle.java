@@ -8,13 +8,11 @@ import static javax.swing.WindowConstants.EXIT_ON_CLOSE;
 import javax.swing.table.DefaultTableCellRenderer;
 import carrentalsystemmain.*;
 import reservation.*;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import database.DBConnection;
-import carrentalsystemmain.*;
-import reservation.*;
+
 
 
 public class Vehicle extends JPanel{
@@ -110,7 +108,7 @@ public class Vehicle extends JPanel{
             JFrame current = (JFrame) SwingUtilities.getWindowAncestor(this);
             current.dispose();
 
-            FoundationFrame ff = new FoundationFrame(new Reservation(rate, name, plate));
+            FoundationFrame ff = new FoundationFrame(new Reservation(rate, name, plate, id));
            });
        
                

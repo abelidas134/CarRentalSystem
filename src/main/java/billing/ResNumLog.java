@@ -20,7 +20,7 @@ public class ResNumLog extends JPanel implements ActionListener {
     private JLabel lblPage,lblResNo;
     private JTextField txtResNo;
     private JButton btnEnter,btnBack;
-    private String reservationNumber,rate, name, plate, customerName,details;    
+    private String reservationNumber,rate, name, plate, customerName,details, carId;    
     
     public ResNumLog(
             String reservationNumber,
@@ -28,7 +28,8 @@ public class ResNumLog extends JPanel implements ActionListener {
             String name,
             String plate,
             String customerName,
-            String details) {
+            String details,
+            String carId) {
 
         this.reservationNumber = reservationNumber;
         this.rate = rate;
@@ -36,6 +37,7 @@ public class ResNumLog extends JPanel implements ActionListener {
         this.plate = plate;
         this.customerName = customerName;
         this.details = details;
+        this.carId = carId;
     
         
         setBounds(600,100,600,600);
@@ -126,7 +128,8 @@ public class ResNumLog extends JPanel implements ActionListener {
                             rate,
                             name,
                             plate,
-                            customerName
+                            customerName,
+                            carId
                     );
 
             rdf.setBounds(900, 175, 600, 600);
