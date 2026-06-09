@@ -217,6 +217,8 @@ class PaymentReceipt extends JPanel implements ActionListener{
                     customerName,
                     pickDate,
                     dropDate
+                    
+            
             );
             ap.setBounds(800, 250, 1366, 768);
             background.add(ap);

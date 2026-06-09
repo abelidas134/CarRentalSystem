@@ -9,6 +9,13 @@ import java.awt.event.*;
 import javax.swing.*;
 import reservation.Reservation;
 import vehicle.*;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import database.DBConnection;
+import java.sql.SQLException;
+
 /**
  *
  * @author Mickey
@@ -81,22 +88,35 @@ public class CustomerPage extends JPanel implements ActionListener {
         if (e.getSource()==btnLogin){
             String userName = txtUserName.getText().trim();
             String pass = txtPassword.getText().trim();
-            if(userName.matches("user123")&&pass.matches("0000")){
-                JFrame current = (JFrame) SwingUtilities.getWindowAncestor(this);
-                current.dispose();
+            
+        try (Connection conn = DBConnection.getConnection()) {
+        String sql = "SELECT * FROM customer WHERE username = ? AND password = ?";
+        PreparedStatement ps = conn.prepareStatement(sql);
+        ps.setString(1, userName);
+        ps.setString(2, pass);
 
-                FoundationFrame ff = new FoundationFrame(new Vehicle());
-               
-            } else {
-                lblMessage = new JLabel("Access Denied: Invalid inputs.");
-                lblMessage.setBounds(250, 350, 500, 100);
-                lblMessage.setFont(new Font("Poppins", Font.CENTER_BASELINE, 13));
-                lblMessage.setForeground(Color.red);
-                add(lblMessage);
-                revalidate();
-                repaint();
+        ResultSet rs = ps.executeQuery();
+
+        if (rs.next()) 
+            {
+            JFrame current = (JFrame) SwingUtilities.getWindowAncestor(this);
+            current.dispose();
+
+            FoundationFrame ff = new FoundationFrame(new Vehicle());
+            } 
+        else 
+            {
+            lblMessage.setText("Access Denied: Invalid inputs.");
+            lblMessage.setFont(new Font("Poppins", Font.CENTER_BASELINE, 13));
+            lblMessage.setForeground(Color.RED);
             }
-        } else if (e.getSource()==btnBack){
+        } 
+        catch (SQLException sqlException) {
+                    sqlException.printStackTrace();
+                }
+            
+        }
+        else if (e.getSource()==btnBack){
             JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
             Container background = mainFrame.getContentPane();
             background.remove(this);
@@ -105,7 +125,7 @@ public class CustomerPage extends JPanel implements ActionListener {
             background.add(hp);
             background.revalidate();
             background.repaint();
-        }
     }
-    
+        
+    }
 }

@@ -5,6 +5,12 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import database.DBConnection;
+import java.sql.SQLException;
+
 /**
  *
  * @author Mickey
@@ -71,10 +77,22 @@ public class AdminPage extends JPanel implements ActionListener {
     
     @Override
     public void actionPerformed(ActionEvent e) {
+        
+        
         if (e.getSource()==btnLogin){
             String userName = txtUserName.getText().trim();
             String pass = txtPassword.getText().trim();
-            if (userName.matches("admin123")&&pass.matches("0000")){
+            try (Connection conn = DBConnection.getConnection()) {
+                
+            String sql = "SELECT * FROM admin WHERE admin_user = ? AND Admin_pass = ?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, userName);
+            ps.setString(2, pass);
+
+        ResultSet rs = ps.executeQuery();
+
+        if (rs.next()) 
+            {
                 JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
                 Container c = mainFrame.getContentPane();
                 c.remove(this);
@@ -85,16 +103,19 @@ public class AdminPage extends JPanel implements ActionListener {
 
                 mainFrame.revalidate();
                 mainFrame.repaint();
-            } else {
-                lblMessage = new JLabel("Access Denied: Invalid credentials.");
-                lblMessage.setBounds(250, 350, 500, 100);
+            } 
+        else 
+            {
+                lblMessage.setText("Access Denied: Invalid credentials.");
                 lblMessage.setFont(new Font("Poppins", Font.CENTER_BASELINE, 13));
-                lblMessage.setForeground(Color.red);
-                add(lblMessage);
-                revalidate();
-                repaint();
+                lblMessage.setForeground(Color.RED);
             }
-        } else if (e.getSource()==btnBack){
+    } catch (SQLException sqlException) {
+                    sqlException.printStackTrace();
+                }
+        }
+        
+        else if (e.getSource()==btnBack){
             JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
             Container background = mainFrame.getContentPane();
             background.remove(this);
@@ -104,6 +125,8 @@ public class AdminPage extends JPanel implements ActionListener {
             background.revalidate();
             background.repaint();
         }
+        
+       
     }
     
 }

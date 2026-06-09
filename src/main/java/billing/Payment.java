@@ -92,7 +92,8 @@ class Payment extends JPanel implements ActionListener{
             current.dispose();
 
             carrentalsystemmain.Main.openHomepage();
-        } else if (e.getSource() == btnCashless) {
+        } 
+        else if (e.getSource() == btnCashless) {
 //            CashlessPayment cp = new CashlessPayment();
 //            cp.setVisible(true);
             JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);

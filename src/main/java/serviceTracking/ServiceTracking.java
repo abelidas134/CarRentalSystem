@@ -8,6 +8,10 @@ import javax.swing.table.DefaultTableModel;
 import carrentalsystemmain.*;
 import serviceTracking.*;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import database.DBConnection;
+
 public class ServiceTracking extends JPanel {
     public static DefaultTableModel vehicleModel;
 
@@ -88,14 +92,33 @@ public class ServiceTracking extends JPanel {
                 null, "Select new status:", "Change Status",
                 JOptionPane.QUESTION_MESSAGE, null, options, options[0]
             );
-            if (chosen != null) {
+             if (chosen != null) {
+                String id = model.getValueAt(row, 0).toString();
                 model.setValueAt(chosen, row, 3);
+
+                int statusId = switch (chosen) {
+                    case "AVAILABLE" -> 1;
+                    case "RESERVED" -> 2;
+                    case "RENTED" -> 3;
+                    case "UNDER MAINTENANCE" -> 4;
+                    default -> 1;
+                };
+
+                try (Connection conn = DBConnection.getConnection()) {
+                    String sql = "UPDATE car SET car_status_id=? WHERE car_id=?";
+                    PreparedStatement ps = conn.prepareStatement(sql);
+                    ps.setInt(1, statusId);
+                    ps.setString(2, id);
+                    ps.executeUpdate();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
             }
         });
         
         btnAdd.addActionListener(e -> {
 
-            String id = JOptionPane.showInputDialog("Vehicle ID:");
+             String id = JOptionPane.showInputDialog("Vehicle ID:");
             if (id == null) {
                 return;
             }
@@ -127,31 +150,45 @@ public class ServiceTracking extends JPanel {
                 return;
             }
 
-            model.addRow(new Object[]{
-                id,
-                plate,
-                name,
-                "AVAILABLE",
-                rate
-            });
+            model.addRow(new Object[]{id, plate, name, "AVAILABLE", "P" + rate});
+
+            try (Connection conn = DBConnection.getConnection()) {
+                String sql = "INSERT INTO car (car_id, car_status_id, plate_no, car_name, rate) VALUES (?, ?, ?, ?, ?)";
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ps.setString(1, id);
+                ps.setInt(2, 1); 
+                ps.setString(3, plate);
+                ps.setString(4, name);
+                ps.setInt(5, Integer.parseInt(rate));
+                ps.executeUpdate();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
 
             JOptionPane.showMessageDialog(null, "Vehicle added successfully!");
         });
         
         btnDel.addActionListener(e -> {
 
-            int row = vehicleTable.getSelectedRow();
-
+          int row = vehicleTable.getSelectedRow();
             if (row == -1) {
-                JOptionPane.showMessageDialog(null,
-                        "Select a vehicle first.");
+                JOptionPane.showMessageDialog(null, "Select a vehicle first.");
                 return;
             }
 
+            String id = model.getValueAt(row, 0).toString();
             model.removeRow(row);
 
-            JOptionPane.showMessageDialog(null,
-                    "Vehicle deleted.");
+            try (Connection conn = DBConnection.getConnection()) {
+                String sql = "DELETE FROM car WHERE car_id=?";
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ps.setString(1, id);
+                ps.executeUpdate();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+
+            JOptionPane.showMessageDialog(null, "Vehicle deleted.");
         });
         
         btnUpdateDet.addActionListener(e -> {
@@ -164,17 +201,9 @@ public class ServiceTracking extends JPanel {
                 return;
             }
 
-            String plate = JOptionPane.showInputDialog(
-                    "Plate Number:",
-                    model.getValueAt(row, 1));
-
-            String name = JOptionPane.showInputDialog(
-                    "Vehicle Name:",
-                    model.getValueAt(row, 2));
-
-            String rate = JOptionPane.showInputDialog(
-                    "Rate:",
-                    model.getValueAt(row, 4));
+            String plate = JOptionPane.showInputDialog("Plate Number:", model.getValueAt(row, 1));
+            String name = JOptionPane.showInputDialog("Vehicle Name:", model.getValueAt(row, 2));
+            String rate = JOptionPane.showInputDialog("Rate:", model.getValueAt(row, 4));
 
             if (plate != null) {
                 model.setValueAt(plate, row, 1);
@@ -202,18 +231,30 @@ public class ServiceTracking extends JPanel {
                 model.setValueAt(rate, row, 4);
             }
 
+
+            String id = model.getValueAt(row, 0).toString();
             model.setValueAt(plate, row, 1);
             model.setValueAt(name, row, 2);
             model.setValueAt(rate, row, 4);
-            JOptionPane.showMessageDialog(null,
-                    "Vehicle updated.");
+
+            try (Connection conn = DBConnection.getConnection()) {
+                String sql = "UPDATE car SET plate_no=?, car_name=?, rate=? WHERE car_id=?";
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ps.setString(1, plate);
+                ps.setString(2, name);
+                ps.setInt(3, Integer.parseInt(rate.replace("P", "")));
+                ps.setString(4, id);
+                ps.executeUpdate();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+
+            JOptionPane.showMessageDialog(null, "Vehicle updated.");
         });
         
         btnSearch.addActionListener(e -> {
 
-            String keyword
-                    = JOptionPane.showInputDialog(
-                            "Enter Vehicle ID or Name:");
+            String keyword = JOptionPane.showInputDialog("Enter Vehicle ID or Name:");
 
             if (keyword == null || keyword.isEmpty()) {
                 return;
@@ -289,6 +330,30 @@ public class ServiceTracking extends JPanel {
         tabs.addTab("Maintenance", maintenancePanel);
         
         add(tabs);
+        loadCarsFromDB();
         setVisible(true);
     }
+    
+    private void loadCarsFromDB() {
+    try (Connection conn = DBConnection.getConnection()) {
+        String sql = "SELECT c.car_id, c.plate_no, c.car_name, s.car_status, c.rate " +
+                     "FROM car c JOIN car_status s ON c.car_status_id = s.car_status_id";
+        PreparedStatement ps = conn.prepareStatement(sql);
+        var rs = ps.executeQuery();
+
+        vehicleModel.setRowCount(0);
+        while (rs.next()) {
+            vehicleModel.addRow(new Object[]{
+                rs.getString("car_id"),
+                rs.getString("plate_no"),
+                rs.getString("car_name"),
+                rs.getString("car_status"),
+                "P" + rs.getInt("rate")
+            });
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+        JOptionPane.showMessageDialog(this, "Error loading cars from database.", "DB Error", JOptionPane.ERROR_MESSAGE);
+    }
+}
 }

@@ -88,7 +88,7 @@ public class CashlessPayment extends JPanel implements ActionListener {
             Container background = mainFrame.getContentPane();
 
             background.remove(this);
-
+            
             SummaryReceipt sr = new SummaryReceipt(
                     resNum,
                     pickDeets,
@@ -116,7 +116,7 @@ public class CashlessPayment extends JPanel implements ActionListener {
             Container background = mainFrame.getContentPane();
 
             background.remove(this);
-
+            //Cashless DATABASE START(?) AAAAA
             SummaryReceipt sr = new SummaryReceipt(
                     resNum,
                     pickDeets,
@@ -141,6 +141,7 @@ public class CashlessPayment extends JPanel implements ActionListener {
             JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
             Container background = mainFrame.getContentPane();
             background.remove(this);
+            
             Payment ap = new Payment(
                     resNum,
                     pickDeets,

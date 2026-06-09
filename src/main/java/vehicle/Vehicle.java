@@ -9,22 +9,25 @@ import javax.swing.table.DefaultTableCellRenderer;
 import carrentalsystemmain.*;
 import reservation.*;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import database.DBConnection;
+import carrentalsystemmain.*;
+import reservation.*;
+
+
 public class Vehicle extends JPanel{
-    public static DefaultTableModel model = new DefaultTableModel(
-            new String[][]{
-                {"V001", "KO3AN0", "Toyota Vios", "AVAILABLE", "P200"},
-                {"V002", "H3KAO9", "Honda Civic", "AVAILABLE", "P230"},
-                {"V003", "GW3H5D", "Ford Ranger", "AVAILABLE", "P330"},
-                {"V004", "1SN4US", "Nissan Altima", "AVAILABLE", "P280"},
-                {"V005", "GSV4U8", "Hyundai Elantra", "AVAILABLE", "P350"}
-            },
-            new String[]{"ID", "Plate Number", "Name", "Status", "Rate"}
+     public static DefaultTableModel model = new DefaultTableModel(
+        new String[]{"ID", "Plate Number", "Name", "Status", "Rate"}, 0
     ) {
         @Override
         public boolean isCellEditable(int row, int column) {
             return false;
         }
     };
+     
+     
     public Vehicle(){
         setBounds(600,200,1000, 600);
         setLayout(null);
@@ -117,8 +120,34 @@ public class Vehicle extends JPanel{
         add(btnbook);
         add(btncancel);
         
+        loadCarsFromDB();
+        
         setVisible(true);
         
 }
+    
+    private void loadCarsFromDB() {
+        try (Connection conn = DBConnection.getConnection()) {
+            String sql = "SELECT c.car_id, c.plate_no, c.car_name, s.car_status, c.rate " +
+                         "FROM car c JOIN car_status s ON c.car_status_id = s.car_status_id";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+
+            model.setRowCount(0); 
+            
+            while (rs.next()) {
+                model.addRow(new Object[]{
+                    rs.getString("car_id"),
+                    rs.getString("plate_no"),
+                    rs.getString("car_name"),
+                    rs.getString("car_status"),
+                    "P" + rs.getInt("rate")
+                });
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error loading cars from database.", "DB Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
     
 }

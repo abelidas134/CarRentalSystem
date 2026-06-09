@@ -5,6 +5,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.*;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import database.DBConnection;
+
 //Updating maintenance
 public class MaintenanceUpdate extends JFrame implements ActionListener {
     JLabel lblmaintenanceTitle,lblcarModelPlatenum, lblLastMaintenanceDate, lblRepairing, lblnextService;//suggestion na may client ID tayo per account
@@ -97,24 +101,50 @@ public class MaintenanceUpdate extends JFrame implements ActionListener {
                    || nextService.isEmpty()) {
                JOptionPane.showMessageDialog(null,
                        "Please fill in all fields before updating!");
-           } else 
-            {
+           } else {
+               
+                String plate = vehicle.split(" - ")[1];
+                String carId = null;
+
                 
-                String record
-                        = "Vehicle: " + vehicle
+                for (int i = 0; i < ServiceTracking.vehicleModel.getRowCount(); i++) {
+                    if (ServiceTracking.vehicleModel.getValueAt(i, 1).toString().equals(plate)) {
+                        carId = ServiceTracking.vehicleModel.getValueAt(i, 0).toString();
+                        break;
+                    }
+                }
+
+                if (carId == null) {
+                    JOptionPane.showMessageDialog(null, "Car ID not found for selected vehicle.");
+                    return;
+                }
+
+                try (Connection conn = DBConnection.getConnection()) {
+                    String sql = "INSERT INTO Car_Maintenance_History (car_id, repair_date, repairing, next_service_date) VALUES (?, ?, ?, ?)";
+                    PreparedStatement ps = conn.prepareStatement(sql);
+                    ps.setString(1, carId);
+                    ps.setString(2, LastMaintenanceDate);
+                    ps.setString(3, Repairing);
+                    ps.setString(4, nextService);
+                    ps.executeUpdate();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(null, "Error saving maintenance record to database.");
+                    return;
+                }
+
+                String record = "Vehicle: " + vehicle
                         + "\nRepair Date: " + LastMaintenanceDate
                         + "\nWork Performed: " + Repairing
                         + "\nNext Service: " + nextService
                         + "\n----------------------------------------\n";
 
                 History.txtHistory.append(record);
+                Maintenance.maintenanceStatus.setText(vehicle + " - " + Repairing);
 
-                Maintenance.maintenanceStatus.setText(
-                        vehicle + " - " + Repairing
-                );
                 JOptionPane.showMessageDialog(null, "Maintenance Updated!");
                 this.dispose();
-            }   
+            }
         }
     }
     
