@@ -1,0 +1,294 @@
+package serviceTracking;
+
+import Services.*;
+import carrentalsystemmain.AdminOption;
+import javax.swing.*;
+import java.awt.*;
+import javax.swing.table.DefaultTableModel;
+import carrentalsystemmain.*;
+import serviceTracking.*;
+
+public class ServiceTracking extends JPanel {
+    public static DefaultTableModel vehicleModel;
+
+    public ServiceTracking(DefaultTableModel model) {
+
+        this.vehicleModel = model;
+
+        setBounds(800, 200, 1000, 600);
+        setLayout(null);
+        setOpaque(false);
+        Color darkAzure = new Color(0, 95, 115);
+                
+        //STATUS CHANGE
+        JTabbedPane tabs = new JTabbedPane();
+        tabs.setFont(new Font("Arial", Font.BOLD, 14));
+        tabs.setBounds(0, 0, 950, 560);
+
+        JPanel vehiclePanel = new JPanel(null);
+        JLabel lbltitle = new JLabel("VEHICLE MANAGEMENT");
+        lbltitle.setFont(new Font("Arial", Font.BOLD, 16));
+        lbltitle.setBounds(50, 20, 300, 30);
+
+        JTable vehicleTable = new JTable(model);
+        vehicleTable.setRowHeight(30);
+        vehicleTable.setFont(new Font("Arial", Font.PLAIN, 12));
+        JScrollPane scroll = new JScrollPane(vehicleTable);
+        scroll.setBounds(20, 60, 900, 330);
+        
+        JButton btnAdd = new JButton("Add");
+        btnAdd.setBounds(30, 430, 120, 40);
+        
+        JButton btnSearch = new JButton("Search");
+        btnSearch.setBounds(170, 430, 120, 40);
+        
+        JButton btnDel = new JButton("Delete");
+        btnDel.setBounds(450, 430, 120, 40);
+
+        
+        JButton btnUpdateDet = new JButton("Update");
+        btnUpdateDet.setBounds(310, 430, 120, 40);
+
+        JButton btnStatus = new JButton("Change Status");
+        btnStatus.setBounds(590, 430, 170, 40);
+        
+        JButton btnback = new JButton("Back");
+        btnback.setBounds(780, 430, 120, 40);
+
+        
+        
+        btnback.addActionListener(e -> {
+            JFrame currentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+            currentFrame.dispose();
+
+            JFrame mainFrame = new JFrame();
+            mainFrame.setSize(1366, 768);
+            mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            mainFrame.setLocationRelativeTo(null);
+            mainFrame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+
+            JLabel background = new JLabel(new ImageIcon(Main.class.getResource("/img/firstBG.png")));
+            background.setLayout(null);
+            AdminOption ap = new AdminOption();
+            ap.setBounds(1100, 250, 1366, 768);
+            background.add(ap);
+            mainFrame.setContentPane(background);
+            mainFrame.setVisible(true);
+        });
+
+        btnStatus.addActionListener(e -> {
+            int row = vehicleTable.getSelectedRow();
+            if (row == -1) {
+                JOptionPane.showMessageDialog(null, "Please select a vehicle.", "No Selection", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            
+            String[] options = {"AVAILABLE", "RESERVED", "RENTED", "UNDER MAINTENANCE"};
+            String chosen = (String) JOptionPane.showInputDialog(
+                null, "Select new status:", "Change Status",
+                JOptionPane.QUESTION_MESSAGE, null, options, options[0]
+            );
+            if (chosen != null) {
+                model.setValueAt(chosen, row, 3);
+            }
+        });
+        
+        btnAdd.addActionListener(e -> {
+
+            String id = JOptionPane.showInputDialog("Vehicle ID:");
+            if (id == null) {
+                return;
+            }
+            if (id.trim().isEmpty()) {
+                return;
+            }
+
+            String plate = JOptionPane.showInputDialog("Plate Number:");
+            if (plate == null) {
+                return;
+            }
+            if (plate.trim().isEmpty()) {
+                return;
+            }
+
+            String name = JOptionPane.showInputDialog("Vehicle Name:");
+            if (name == null) {
+                return;
+            }
+            if (name.trim().isEmpty()) {
+                return;
+            }
+
+            String rate = JOptionPane.showInputDialog("Rate:");
+            if (rate == null) {
+                return;
+            }
+            if (rate.trim().isEmpty()) {
+                return;
+            }
+
+            model.addRow(new Object[]{
+                id,
+                plate,
+                name,
+                "AVAILABLE",
+                rate
+            });
+
+            JOptionPane.showMessageDialog(null, "Vehicle added successfully!");
+        });
+        
+        btnDel.addActionListener(e -> {
+
+            int row = vehicleTable.getSelectedRow();
+
+            if (row == -1) {
+                JOptionPane.showMessageDialog(null,
+                        "Select a vehicle first.");
+                return;
+            }
+
+            model.removeRow(row);
+
+            JOptionPane.showMessageDialog(null,
+                    "Vehicle deleted.");
+        });
+        
+        btnUpdateDet.addActionListener(e -> {
+
+            int row = vehicleTable.getSelectedRow();
+
+            if (row == -1) {
+                JOptionPane.showMessageDialog(null,
+                        "Select a vehicle first.");
+                return;
+            }
+
+            String plate = JOptionPane.showInputDialog(
+                    "Plate Number:",
+                    model.getValueAt(row, 1));
+
+            String name = JOptionPane.showInputDialog(
+                    "Vehicle Name:",
+                    model.getValueAt(row, 2));
+
+            String rate = JOptionPane.showInputDialog(
+                    "Rate:",
+                    model.getValueAt(row, 4));
+
+            if (plate != null) {
+                model.setValueAt(plate, row, 1);
+            }
+            if (plate == null || name == null || rate == null) {
+                return;
+            }
+
+            if (plate.trim().isEmpty()
+                    || name.trim().isEmpty()
+                    || rate.trim().isEmpty()) {
+
+                JOptionPane.showMessageDialog(
+                        null,
+                        "All fields are required."
+                );
+                return;
+            }
+
+            if (name != null) {
+                model.setValueAt(name, row, 2);
+            }
+
+            if (rate != null) {
+                model.setValueAt(rate, row, 4);
+            }
+
+            model.setValueAt(plate, row, 1);
+            model.setValueAt(name, row, 2);
+            model.setValueAt(rate, row, 4);
+            JOptionPane.showMessageDialog(null,
+                    "Vehicle updated.");
+        });
+        
+        btnSearch.addActionListener(e -> {
+
+            String keyword
+                    = JOptionPane.showInputDialog(
+                            "Enter Vehicle ID or Name:");
+
+            if (keyword == null || keyword.isEmpty()) {
+                return;
+            }
+
+            boolean found = false;
+
+            for (int i = 0; i < model.getRowCount(); i++) {
+
+                String id
+                        = model.getValueAt(i, 0)
+                                .toString();
+
+                String name
+                        = model.getValueAt(i, 2)
+                                .toString();
+
+                if (id.equalsIgnoreCase(keyword)
+                        || name.toLowerCase()
+                                .contains(keyword.toLowerCase())) {
+
+                    vehicleTable.setRowSelectionInterval(i, i);
+
+                    vehicleTable.scrollRectToVisible(
+                            vehicleTable.getCellRect(
+                                    i, 0, true));
+
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Vehicle not found.");
+            }
+        });
+
+        vehiclePanel.add(lbltitle);
+        vehiclePanel.add(scroll);
+        vehiclePanel.add(btnStatus);
+        vehiclePanel.add(btnback);
+        vehiclePanel.add(btnAdd);
+        vehiclePanel.add(btnSearch);
+        vehiclePanel.add(btnUpdateDet);
+        vehiclePanel.add(btnDel);
+        
+        //HISTORY   
+        JPanel historyPanel = new JPanel(null);
+        JLabel lbltitle2 = new JLabel("VEHICLE HISTORY");
+        lbltitle2.setFont(new Font("Arial", Font.BOLD, 16));
+        lbltitle2.setBounds(50, 20, 300, 30);
+        History h = new History();
+        h.setBounds(0, 0, 900, 500);
+        historyPanel.add(h);       
+        historyPanel.add(lbltitle2);
+        
+        //MAINTENANCE       
+        JPanel maintenancePanel = new JPanel(null);
+        JLabel lbltitle3 = new JLabel("VEHICLE MAINTENANCE");
+        lbltitle3.setFont(new Font("Arial", Font.BOLD, 16));
+        lbltitle3.setBounds(50, 20, 300, 30);
+       
+        maintenancePanel.add(lbltitle3);
+        Maintenance m = new Maintenance();
+        m.setBounds(20, 20, 900, 500);
+        maintenancePanel.add(m);
+        
+       
+        tabs.addTab("Vehicles", vehiclePanel);
+        tabs.addTab("History", historyPanel);
+        tabs.addTab("Maintenance", maintenancePanel);
+        
+        add(tabs);
+        setVisible(true);
+    }
+}
