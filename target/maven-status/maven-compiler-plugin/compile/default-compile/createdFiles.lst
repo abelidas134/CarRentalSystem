@@ -22,5 +22,6 @@ reservation\Reservation.class
 billing\SummaryReceipt.class
 Services\CarDetails.class
 billing\CashlessPayment.class
+database\DBConnection.class
 billing\DatesBilling.class
 carrentalsystemmain\CustomerPage.class

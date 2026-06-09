@@ -4,13 +4,26 @@ package carrentalsystemmain;
 import java.awt.*;
 import javax.swing.*;
 import reservation.*;
-
+import database.DBConnection;
+import java.sql.Connection;
 
 public class Main {
 
     public static void main(String[] args) {
+        Connection con
+                = DBConnection.getConnection();
+
+        if (con != null) {
+
+            System.out.println("CONNECTED");
+
+        } else {
+
+            System.out.println("FAILED");
+
+        }
+
         openHomepage();
-        
         
     }
     public static void openHomepage() {
