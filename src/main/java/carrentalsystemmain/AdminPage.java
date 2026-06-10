@@ -16,7 +16,7 @@ import java.sql.SQLException;
  * @author Mickey
  */
 public class AdminPage extends JPanel implements ActionListener {
-    private JLabel lblMessage, lblUserName, lblPassword;
+    private JLabel lblMessage, lblUserName, lblPassword,lblError;
     private JTextField txtUserName;
     private JButton btnLogin, btnBack;
     private JPasswordField txtPassword;
@@ -30,6 +30,11 @@ public class AdminPage extends JPanel implements ActionListener {
         lblMessage.setBounds(250, 125, 500,100);
         lblMessage.setFont(new Font("Poppins",Font.BOLD,25));
         add(lblMessage);
+        
+        lblError = new JLabel ();
+        lblError.setBounds(250, 350, 500,100);
+        lblError.setFont(new Font("Poppins",Font.BOLD,25));
+        add(lblError);
         
         lblUserName = new JLabel ("Username:");
         lblUserName.setBounds(190,190, 150,100);
@@ -106,9 +111,9 @@ public class AdminPage extends JPanel implements ActionListener {
             } 
         else 
             {
-                lblMessage.setText("Access Denied: Invalid credentials.");
-                lblMessage.setFont(new Font("Poppins", Font.CENTER_BASELINE, 13));
-                lblMessage.setForeground(Color.RED);
+                lblError.setText("Access Denied: Invalid credentials.");
+                lblError.setFont(new Font("Poppins", Font.CENTER_BASELINE, 13));
+                lblError.setForeground(Color.RED);
             }
     } catch (SQLException sqlException) {
                     sqlException.printStackTrace();

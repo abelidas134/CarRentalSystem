@@ -21,7 +21,7 @@ import java.sql.SQLException;
  * @author Mickey
  */
 public class CustomerPage extends JPanel implements ActionListener {
-    private JLabel lblMessage, lblUserName, lblPassword;
+    private JLabel lblMessage, lblUserName, lblPassword,lblError;
     private JTextField txtUserName;
     private JPasswordField txtPassword;
     private JButton btnLogin, btnBack;
@@ -36,6 +36,11 @@ public class CustomerPage extends JPanel implements ActionListener {
         lblMessage.setBounds(220, 125, 500,100);
         lblMessage.setFont(new Font("Poppins",Font.BOLD,25));
         add(lblMessage);
+        
+        lblError = new JLabel ();
+        lblError.setBounds(250, 350, 500,100);
+        lblError.setFont(new Font("Poppins",Font.BOLD,25));
+        add(lblError);
         
         lblMessage = new JLabel ("Check your receipt and login your account!");
         lblMessage.setBounds(220, 150, 500,100);
@@ -106,9 +111,9 @@ public class CustomerPage extends JPanel implements ActionListener {
             } 
         else 
             {
-            lblMessage.setText("Access Denied: Invalid inputs.");
-            lblMessage.setFont(new Font("Poppins", Font.CENTER_BASELINE, 13));
-            lblMessage.setForeground(Color.RED);
+            lblError.setText("Access Denied: Invalid inputs.");
+            lblError.setFont(new Font("Poppins", Font.CENTER_BASELINE, 13));
+            lblError.setForeground(Color.RED);
             }
         } 
         catch (SQLException sqlException) {
