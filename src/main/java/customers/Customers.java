@@ -12,10 +12,11 @@ import database.DBConnection;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
 
 public class Customers extends JPanel implements Searchable {
     
-    private JTextField txtId, txtName, txtPhone, txtLicense, txtAddress, txtSearch;
+    private JTextField txtId, txtName, txtPhone, txtEmail, txtLicense, txtAddress, txtSearch;
     
 
     public Customers() {
@@ -24,7 +25,7 @@ public class Customers extends JPanel implements Searchable {
         setOpaque(false);
         Color darkAzure = new Color(0, 95, 115);
 
-        JLabel lblId = new JLabel("Reservation ID:");
+        JLabel lblId = new JLabel("Customer ID:");
         lblId.setBounds(50, 75, 200, 25);
         lblId.setFont(new Font("Poppins",Font.ROMAN_BASELINE,20));
         add(lblId);
@@ -47,21 +48,29 @@ public class Customers extends JPanel implements Searchable {
         txtPhone = new JTextField();
         txtPhone.setBounds(250, 180, 300,40);
         add(txtPhone);
+        
+        JLabel lblEmail = new JLabel("Email Address:");
+        lblEmail.setBounds(50, 235, 200, 25);
+        lblEmail.setFont(new Font("Poppins",Font.ROMAN_BASELINE,20));
+        add(lblEmail);
+        txtEmail = new JTextField();
+        txtEmail.setBounds(250, 235, 300, 40);
+        add(txtEmail);
 
         JLabel lblLicense = new JLabel("Drivers License:");
-        lblLicense.setBounds(50, 235, 200, 25);
+        lblLicense.setBounds(50, 290, 200, 25);
         lblLicense.setFont(new Font("Poppins",Font.ROMAN_BASELINE,20));
         add(lblLicense);
         txtLicense = new JTextField();
-        txtLicense.setBounds(250, 235, 300,40);
+        txtLicense.setBounds(250, 290, 300,40);
         add(txtLicense);
 
-        JLabel lblAddress = new JLabel("Email Address:");
-        lblAddress.setBounds(50, 290, 200, 25);
+        JLabel lblAddress = new JLabel("Address:");
+        lblAddress.setBounds(50, 345, 200, 25);
         lblAddress.setFont(new Font("Poppins",Font.ROMAN_BASELINE,20));
         add(lblAddress);
         txtAddress = new JTextField();
-        txtAddress.setBounds(250, 290,300,40);
+        txtAddress.setBounds(250, 345,300,40);
         add(txtAddress);
 
         JButton btnAdd = new JButton("Add");
@@ -139,19 +148,42 @@ public class Customers extends JPanel implements Searchable {
         try {
              Connection conn = DBConnection.getConnection();
 
-             String sql = "INSERT INTO customer_book(name, phone, drivers_license, address) "
-                         + "VALUES (?, ?, ?, ?)";
+             String sql = "INSERT INTO customer_book(name, phone, email, drivers_license, address) "
+                         + "VALUES (?, ?, ?, ?, ?)";
+             
+             String email = txtEmail.getText().trim();
+                if(email.isEmpty()){
+                     email = "N/A"; }
 
-         PreparedStatement pst = conn.prepareStatement(sql);
+         PreparedStatement pst = conn.prepareStatement(sql,
+                 Statement.RETURN_GENERATED_KEYS);
 
          pst.setString(1, txtName.getText());
          pst.setString(2, txtPhone.getText());
-         pst.setString(3, txtLicense.getText());
-         pst.setString(4, txtAddress.getText()); 
+         pst.setString(3, txtEmail.getText());
+         pst.setString(4, txtLicense.getText());
+         pst.setString(5, txtAddress.getText()); 
 
          pst.executeUpdate();
+         ResultSet rs = pst.getGeneratedKeys();
+
+        int customerId = 0;
+        if (rs.next()) {
+        customerId = rs.getInt(1);
+}
          conn.close();
-        JOptionPane.showMessageDialog(null, "Customer added!");
+        JOptionPane.showMessageDialog(
+                null,
+                "Customer added successfully!\n\n"
+                + "Customer ID: " + customerId + "\n"
+                + "Name: " + txtName.getText().trim() + "\n"
+                + "Phone: " + txtPhone.getText().trim() + "\n"
+                + "Email: " + email + "\n"
+                + "License: " + txtLicense.getText().trim() + "\n"
+                + "Address: " + txtAddress.getText().trim(),
+                "Customer Added",
+                JOptionPane.INFORMATION_MESSAGE
+        );
         clearFields();
     } catch (Exception ex) {
         ex.printStackTrace();
@@ -159,47 +191,93 @@ public class Customers extends JPanel implements Searchable {
      }
   });
         
-        btnUpdate.addActionListener(e -> {
+      btnUpdate.addActionListener(e -> {
         if (txtId.getText().trim().isEmpty()) {
-             JOptionPane.showMessageDialog(null, "Customer ID is required.", "Error",JOptionPane.WARNING_MESSAGE);
+        JOptionPane.showMessageDialog(null, "Customer ID is required.");
         return;
     }
-        try {
-            Connection conn = DBConnection.getConnection();
+    try {
+        int id = Integer.parseInt(txtId.getText().trim());
 
-            String sql =
-                "UPDATE customer_book "
-                + "SET name = ?, "
-                + "phone = ?, "
-                + "drivers_license = ?, "
-                + "address = ? "
-                + "WHERE cus_book_id = ?";
+        Connection conn = DBConnection.getConnection();
 
-        PreparedStatement pst = conn.prepareStatement(sql);
+        String selectSql = "SELECT * FROM customer_book WHERE cus_book_id = ?";
+        PreparedStatement selectPst = conn.prepareStatement(selectSql);
+        selectPst.setInt(1, id);
 
-        pst.setString(1, txtName.getText());
-        pst.setString(2, txtPhone.getText());
-        pst.setString(3, txtLicense.getText());
-        pst.setString(4, txtAddress.getText());
+        ResultSet rs = selectPst.executeQuery();
 
-        pst.setInt(5, Integer.parseInt(txtId.getText()));
+        if (!rs.next()) {
+            JOptionPane.showMessageDialog(null, "Customer not found.");
+            conn.close();
+            return;
+        }
 
-        int rowsUpdated = pst.executeUpdate();
+        String currentName = rs.getString("name");
+        String currentPhone = rs.getString("phone");
+        String currentEmail = rs.getString("email");
+        String currentLicense = rs.getString("drivers_license");
+        String currentAddress = rs.getString("address");
+
+        String newName = txtName.getText().trim().isEmpty()
+                ? currentName
+                : txtName.getText().trim();
+
+        String newPhone = txtPhone.getText().trim().isEmpty()
+                ? currentPhone
+                : txtPhone.getText().trim();
+        
+        String newEmail = txtEmail.getText().trim().isEmpty()
+                ? currentEmail
+                : txtEmail.getText().trim();
+
+        String newLicense = txtLicense.getText().trim().isEmpty()
+                ? currentLicense
+                : txtLicense.getText().trim();
+
+        String newAddress = txtAddress.getText().trim().isEmpty()
+                ? currentAddress
+                : txtAddress.getText().trim();
+
+        String updateSql = "UPDATE customer_book "
+                         + "SET name = ?, phone = ?, email = ? , drivers_license = ?, address = ? "
+                         + "WHERE cus_book_id = ?";
+
+        PreparedStatement updatePst = conn.prepareStatement(updateSql);
+
+        updatePst.setString(1, newName);
+        updatePst.setString(2, newPhone);
+        updatePst.setString(3, newEmail);
+        updatePst.setString(4, newLicense);
+        updatePst.setString(5, newAddress);
+        updatePst.setInt(6, id);
+
+        updatePst.executeUpdate();
+
         conn.close();
 
-        if (rowsUpdated > 0) {
-            JOptionPane.showMessageDialog(null, "Customer updated successfully."
-            );
-            clearFields();
-        } else {
-            JOptionPane.showMessageDialog(null,"Customer not found.");
-        }
+        JOptionPane.showMessageDialog(
+                null,
+                "Customer updated successfully!\n\n"
+                + "Customer ID: " + id + "\n"
+                + "Name: " + newName + "\n"
+                + "Phone: " + newPhone + "\n"
+                + "Email:  " + newEmail + "\n"
+                + "License: " + newLicense + "\n"
+                + "Address: " + newAddress,
+                "Customer Updated",
+                JOptionPane.INFORMATION_MESSAGE
+        );
+
+        clearFields();
+
     } catch (NumberFormatException ex) {
-        JOptionPane.showMessageDialog(null,"Customer ID must be a number.");
+        JOptionPane.showMessageDialog(null, "Customer ID must be a number.");
     } catch (Exception ex) {
         ex.printStackTrace();
-        JOptionPane.showMessageDialog(null,"Error: " + ex.getMessage());
+        JOptionPane.showMessageDialog(null, "Database error: " + ex.getMessage());
     }
+
 });
         
       btnDelete.addActionListener(e -> {
@@ -239,7 +317,7 @@ public class Customers extends JPanel implements Searchable {
 
         btnClear.addActionListener(e -> clearFields());
 
-        btnBack.addActionListener(e -> {
+      btnBack.addActionListener(e -> {
             JFrame currentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
             currentFrame.dispose();
             
@@ -258,7 +336,7 @@ public class Customers extends JPanel implements Searchable {
             mainFrame.setVisible(true);
         });
 
-        btnSearch.addActionListener(e -> {
+      btnSearch.addActionListener(e -> {
             String keyword = txtSearch.getText().trim();
             if(keyword.isEmpty()){
                 JOptionPane.showMessageDialog(null, "Enter ID or Fullname to search.","Error", JOptionPane.OK_OPTION);
@@ -300,7 +378,7 @@ public class Customers extends JPanel implements Searchable {
                    .append("Phone: ")
                    .append(rs.getString("phone"))
                    .append("\n")
-
+                    
                    .append("Email: ")
                    .append(rs.getString("email"))
                    .append("\n")
@@ -363,6 +441,7 @@ public class Customers extends JPanel implements Searchable {
         txtId.setText("");
         txtName.setText("");
         txtPhone.setText("");
+        txtEmail.setText("");
         txtLicense.setText("");
         txtAddress.setText("");
         txtSearch.setText("");
