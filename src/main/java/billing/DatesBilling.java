@@ -6,6 +6,14 @@ import java.awt.event.*;
 import javax.swing.*;
 import prevention.*;
 import reservation.Reservation;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import reservation.ReservationDetailsFrame;
+
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+
 
 public class DatesBilling extends JPanel implements ActionListener {
     private JPanel panelBill,panelPick, panelDrop;
@@ -28,12 +36,15 @@ public class DatesBilling extends JPanel implements ActionListener {
         for (int i=0;i<month31.length;i++) month31[i]=i+1;
     }
     
-    DatesBilling(String reservationNumber,String rate, String name, String plate, String customerName){
+    private Reservation reservationPanel;
+
+    public DatesBilling(String reservationNumber, String rate, String name, String plate, String customerName, Reservation reservationPanel) {
         this.reservationNumber = reservationNumber;
         this.rate =rate;
         this.name = name;
         this.plate = plate;
         this.customerName = customerName;
+        this.reservationPanel = reservationPanel;
         
         setBounds(0,0,600,600);
         setLayout(null);
@@ -70,7 +81,7 @@ public class DatesBilling extends JPanel implements ActionListener {
         lblYear.setBounds(200,0,100,75);
         panelPick.add(lblYear);
         
-        txtYearPick = new JTextField ("   ");
+        txtYearPick = new JTextField(String.valueOf(java.time.Year.now().getValue()));
         txtYearPick.setBounds(260,23,100,25);
         panelPick.add(txtYearPick);
         
@@ -105,7 +116,7 @@ public class DatesBilling extends JPanel implements ActionListener {
         lblYear.setBounds(200,0,100,75);
         panelDrop.add(lblYear);
         
-        txtYearDrop = new JTextField ("   ");
+        txtYearDrop = new JTextField(String.valueOf(java.time.Year.now().getValue()));
         txtYearDrop.setBounds(260,23,100,25);
         panelDrop.add(txtYearDrop);
         
@@ -137,10 +148,74 @@ public class DatesBilling extends JPanel implements ActionListener {
         comboMonthPick.addActionListener(this);
         comboMonthDrop.addActionListener(this);
         txtYearPick.addActionListener(this);        
-        txtYearDrop.addActionListener(this);        
+        txtYearDrop.addActionListener(this); 
+               
     }
-    
-    public void monthPick() {
+@Override
+public void actionPerformed(ActionEvent e) {
+   
+    if (e.getSource() == btnContinue) {
+        try {
+         
+            Integer dayPick = (Integer) comboDayPick.getSelectedItem();
+            Integer dayDrop = (Integer) comboDayDrop.getSelectedItem();
+            if (dayPick == null || dayDrop == null) {
+                JOptionPane.showMessageDialog(this, "Please select both pick-up and drop-off days!");
+                return;
+            }
+
+            String y1 = txtYearPick.getText().trim();
+            String y2 = txtYearDrop.getText().trim();
+            if (!y1.matches("\\d+") || !y2.matches("\\d+")) {
+                JOptionPane.showMessageDialog(this, "Enter valid years!");
+                return;
+            }
+
+            int yearPick = Integer.parseInt(y1);
+            int yearDrop = Integer.parseInt(y2);
+            int monthPick = comboMonthPick.getSelectedIndex() + 1;
+            int monthDrop = comboMonthDrop.getSelectedIndex() + 1;
+
+            LocalDate d1 = LocalDate.of(yearPick, monthPick, dayPick);
+            LocalDate d2 = LocalDate.of(yearDrop, monthDrop, dayDrop);
+
+            if (d2.isBefore(d1)) {
+                JOptionPane.showMessageDialog(this, "Drop-off must be after pick-up!");
+                return;
+            }
+
+            PaymentReceipt receiptPanel = new PaymentReceipt(
+            reservationNumber,
+            d1.toString(),   
+            d2.toString(),   
+            (int) ChronoUnit.DAYS.between(d1, d2), 
+            name,
+            plate,
+            rate,
+            reservationNumber,
+            customerName,
+            d1,
+            d2
+        );
+
+        receiptPanel.setBounds(800, 250, 600, 600);
+
+        JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+        Container contentPane = mainFrame.getContentPane();
+        contentPane.remove(this);
+        contentPane.add(receiptPanel);
+        contentPane.revalidate();
+        contentPane.repaint();
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Unexpected error: " + ex.getMessage());
+        }
+    }
+}
+
+//METHODSS
+public void monthPick() {
         String m = ((String) comboMonthPick.getSelectedItem()).toLowerCase();
         if (m.matches("january|march|may|july|august|october|december")) {
             comboDayPick.setModel(new DefaultComboBoxModel<>(month31));
@@ -175,102 +250,4 @@ public class DatesBilling extends JPanel implements ActionListener {
             comboDayDrop.setModel(new DefaultComboBoxModel<>(month30));
         }
     }
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
-         if (e.getSource() == comboMonthPick || e.getSource() == txtYearPick) {
-            monthPick();
-        } else if (e.getSource() == comboMonthDrop || e.getSource() == txtYearDrop) {
-            monthDrop();
-        } else if (e.getSource() == btnContinue) {
-
-            Integer dayPick = (Integer) comboDayPick.getSelectedItem();
-            Integer dayDrop = (Integer) comboDayDrop.getSelectedItem();
-
-            if (dayPick == null || dayDrop == null) {
-                JOptionPane.showMessageDialog(null,"Please select both pick-up and drop-off days!","Error",JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            String y1 = txtYearPick.getText().trim();
-            String y2 = txtYearDrop.getText().trim();
-
-            if (!y1.matches("\\d+") || !y2.matches("\\d+")) {
-                JOptionPane.showMessageDialog(null,"Enter valid years!","Error",JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            int yearPick = Integer.parseInt(y1);
-            int yearDrop = Integer.parseInt(y2);
-
-            int monthPick = comboMonthPick.getSelectedIndex() + 1;
-            int monthDrop = comboMonthDrop.getSelectedIndex() + 1;
-
-            java.time.LocalDate d1 = java.time.LocalDate.of(yearPick, monthPick, dayPick);
-            java.time.LocalDate d2 = java.time.LocalDate.of(yearDrop, monthDrop, dayDrop);
-            
-             if (Prevent.hasConflict(plate, d1, d2)) {
-                 JOptionPane.showMessageDialog(
-                         null,
-                         "NO BOOKING: may existing reservation sa selected date!",
-                         "Conflict Detected",
-                         JOptionPane.ERROR_MESSAGE
-                 );
-                 return;
-             }
-            
-            long days = java.time.temporal.ChronoUnit.DAYS.between(d1, d2);
-
-            if (days < 1) {
-                JOptionPane.showMessageDialog(null,"Drop-off must be after pick-up!","Error",JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            monthPickStmnt = comboMonthPick.getSelectedItem() + ", " + dayPick + ", " + yearPick;
-            monthDropStmnt = comboMonthDrop.getSelectedItem() + ", " + dayDrop + ", " + yearDrop;
-
-//            PaymentReceipt op = new PaymentReceipt(res, monthPickStmnt, monthDropStmnt, (int)days);
-//            op.setVisible(true);
-            //Prevent.addBooking(plate, d1, d2);
-            JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
-            Container background = mainFrame.getContentPane();
-            background.remove(this);
-            System.out.println("RATE = " + rate);
-             PaymentReceipt ap = new PaymentReceipt(
-                     res,
-                     monthPickStmnt,
-                     monthDropStmnt,
-                     (int) days,
-                     name,
-                     plate,
-                     rate,
-                     reservationNumber,
-                     customerName,
-                     d1,
-                     d2
-             );
-            ap.setBounds(800, 250, 1366, 768);
-            background.add(ap);
-            background.revalidate();
-            background.repaint();
-        } 
-//        else if (e.getSource() == btnBack) {
-//             JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
-//             Container background = mainFrame.getContentPane();
-//             background.remove(this);
-//             ResNumLog ap
-//                     = new ResNumLog(
-//                             reservationNumber,
-//                             rate,
-//                             name,
-//                             plate,
-//                             customerName,
-//                             details
-//                     );
-//             ap.setBounds(850, 200, 1366, 768);
-//             background.add(ap);
-//             background.revalidate();
-//             background.repaint();
-//        }
-    }
-}
+        }

@@ -36,7 +36,7 @@ public class Main {
                 new ImageIcon(Main.class.getResource("/img/firstBG.png"))
         );
 
-        background.setLayout(null);
+            background.setLayout(null);
 
         Homepage hp = new Homepage();
         hp.setBounds(975, 220, 1366, 768);

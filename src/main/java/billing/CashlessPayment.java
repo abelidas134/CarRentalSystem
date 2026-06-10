@@ -5,6 +5,10 @@ import java.awt.event.*;
 import java.time.*;
 import javax.swing.*;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+
 public class CashlessPayment extends JPanel implements ActionListener {
 
     private JPanel panelBill, panelMenu;
@@ -74,91 +78,90 @@ public class CashlessPayment extends JPanel implements ActionListener {
         setVisible(true);
     }
 
-    @Override
-    public void actionPerformed(ActionEvent e) {
+@Override
+public void actionPerformed(ActionEvent e) {
 
-        if (e.getSource() == btnCard) {
+    if (e.getSource() == btnCard) {
+        try (Connection conn = DriverManager.getConnection(
+            "jdbc:mysql://localhost:3306/db_carrental", "root", "")) {
 
-            JOptionPane.showMessageDialog(
-                    null,
-                    "Please proceed to the cashier for card payment processing."
-            );
+            String sql = "INSERT INTO payments (reservation_id, amount, method_pay_id, pay_status_id) VALUES (?, ?, ?, ?)";
+            PreparedStatement ps = conn.prepareStatement(sql);
 
-            JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
-            Container background = mainFrame.getContentPane();
+            double amount = daysTotal * Double.parseDouble(rate.replace("P", ""));
+            ps.setString(1, reservationNumber);
+            ps.setDouble(2, amount);
+            ps.setInt(3, 2);
+            ps.setInt(4, 1); 
 
-            background.remove(this);
-            
-            SummaryReceipt sr = new SummaryReceipt(
-                    resNum,
-                    pickDeets,
-                    dropDeets,
-                    daysTotal,
-                    name,
-                    plate,
-                    rate,
-                    reservationNumber,
-                    "CARD",
-                    customerName,
-                    pickDate,
-                    dropDate
-            );
-
-            sr.setBounds(550, 200, 1366, 768);
-
-            background.add(sr);
-            background.revalidate();
-            background.repaint();
+            ps.executeUpdate();
+            JOptionPane.showMessageDialog(null, "Card payment saved successfully!");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Database error: " + ex.getMessage());
         }
-        else if (e.getSource() == btnQR) {
 
-            JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
-            Container background = mainFrame.getContentPane();
+        JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+        Container background = mainFrame.getContentPane();
+        background.remove(this);
 
-            background.remove(this);
-            //Cashless DATABASE START(?) AAAAA
-            SummaryReceipt sr = new SummaryReceipt(
-                    resNum,
-                    pickDeets,
-                    dropDeets,
-                    daysTotal,
-                    name,
-                    plate,
-                    rate,
-                    reservationNumber,
-                    "QR CODE",
-                    customerName,
-                    pickDate,
-                    dropDate
-            );
-
-            sr.setBounds(800, 250, 1366, 768);
-
-            background.add(sr);
-            background.revalidate();
-            background.repaint();
-        } else if (e.getSource()==btnBack){
-            JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
-            Container background = mainFrame.getContentPane();
-            background.remove(this);
-            
-            Payment ap = new Payment(
-                    resNum,
-                    pickDeets,
-                    dropDeets,
-                    daysTotal,
-                    name,
-                    plate,
-                    rate,
-                    reservationNumber,
-                    customerName,
-                    pickDate,
-                    dropDate
-            );
-            ap.setBounds(800, 250,1366, 768);
-            background.add(ap);
-            background.revalidate();
-            background.repaint();
-        }
+        SummaryReceipt sr = new SummaryReceipt(
+            resNum, pickDeets, dropDeets, daysTotal, name, plate, rate,
+            reservationNumber, "CARD", customerName, pickDate, dropDate
+        );
+        sr.setBounds(550, 200, 1366, 768);
+        background.add(sr);
+        background.revalidate();
+        background.repaint();
     }
+    else if (e.getSource() == btnQR) {
+        
+        try (Connection conn = DriverManager.getConnection(
+            "jdbc:mysql://localhost:3306/db_rentalcar", "root", "")) {
+
+            String sql = "INSERT INTO payments (reservation_id, amount, method_pay_id, pay_status_id) VALUES (?, ?, ?, ?)";
+            PreparedStatement ps = conn.prepareStatement(sql);
+
+            double amount = daysTotal * Double.parseDouble(rate.replace("P", ""));
+            ps.setString(1, reservationNumber);
+            ps.setDouble(2, amount);
+            ps.setInt(3, 3); 
+            ps.setInt(4, 1); 
+
+            ps.executeUpdate();
+            JOptionPane.showMessageDialog(null, "QR Code payment saved successfully!");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Database error: " + ex.getMessage());
+        }
+        
+    
+        JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+        Container background = mainFrame.getContentPane();
+        background.remove(this);
+
+        SummaryReceipt sr = new SummaryReceipt(
+            resNum, pickDeets, dropDeets, daysTotal, name, plate, rate,
+            reservationNumber, "QR CODE", customerName, pickDate, dropDate
+        );
+        sr.setBounds(800, 250, 1366, 768);
+        background.add(sr);
+        background.revalidate();
+        background.repaint();
+    }
+    else if (e.getSource() == btnBack) {
+        JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+        Container background = mainFrame.getContentPane();
+        background.remove(this);
+
+        Payment ap = new Payment(
+            resNum, pickDeets, dropDeets, daysTotal, name, plate, rate,
+            reservationNumber, customerName, pickDate, dropDate
+        );
+        ap.setBounds(800, 250, 1366, 768);
+        background.add(ap);
+        background.revalidate();
+        background.repaint();
+    }
+}
 }

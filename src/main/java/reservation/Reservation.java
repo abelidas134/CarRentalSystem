@@ -1,4 +1,5 @@
 package reservation;
+
 import carrentalsystemmain.FoundationFrame;
 import javax.swing.*;
 import java.awt.*;
@@ -12,35 +13,35 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
-
-
 public class Reservation extends JPanel {
 
     static int reservationCounter = 1001;
 
     JTextField nameField, contactField, emailField, licenseField, addressField;
     JLabel statusLabel;
+    private String details;
+    private String reservationNumber;
     private String rate, name, plate, customerName, carId;
-    public Reservation(String rate,String name, String plate, String carId) {
+
+    public Reservation(String rate, String name, String plate, String carId) {
         this.rate = rate;
         this.name = name;
         this.plate = plate;
         this.carId = carId;
-        setBounds(800,175,1000, 600);
+        setBounds(800, 175, 1000, 600);
 
         setLayout(null);
 
         JButton backBtn = new JButton("Back");
         backBtn.setBounds(5, 475, 180, 40);
         add(backBtn);
-        
-    backBtn.addActionListener(e -> {
-        JFrame current = (JFrame) SwingUtilities.getWindowAncestor(this);
-        current.dispose();
 
-        FoundationFrame ff = new FoundationFrame(new Vehicle());
-    });
-    
+        backBtn.addActionListener(e -> {
+            JFrame current = (JFrame) SwingUtilities.getWindowAncestor(this);
+            current.dispose();
+
+            FoundationFrame ff = new FoundationFrame(new Vehicle());
+        });
 
         JLabel titleLabel = new JLabel("BOOKING AND RESERVATION");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 28));
@@ -50,47 +51,56 @@ public class Reservation extends JPanel {
         nameLabel.setFont(new Font("Arial", Font.PLAIN, 18));
         nameLabel.setBounds(150, 120, 250, 30);
 
-         nameField = new JTextField();
+        nameField = new JTextField();
         nameField.setBounds(420, 120, 300, 35);
 
         JLabel contactLabel = new JLabel("Contact Number:");
         contactLabel.setFont(new Font("Arial", Font.PLAIN, 18));
         contactLabel.setBounds(150, 190, 250, 30);
 
-         contactField = new JTextField();
+        contactField = new JTextField();
         contactField.setBounds(420, 190, 300, 35);
 
         JLabel emailLabel = new JLabel("Email Address (Optional)");
         emailLabel.setFont(new Font("Arial", Font.PLAIN, 18));
         emailLabel.setBounds(150, 260, 250, 30);
 
-          emailField = new JTextField();
+        emailField = new JTextField();
         emailField.setBounds(420, 260, 300, 35);
 
         JLabel licenseLabel = new JLabel("Driver's License Number");
         licenseLabel.setFont(new Font("Arial", Font.PLAIN, 18));
         licenseLabel.setBounds(150, 330, 250, 30);
 
-          licenseField = new JTextField();
+        licenseField = new JTextField();
         licenseField.setBounds(420, 330, 300, 35);
 
         JLabel addressLabel = new JLabel("House Address(Optional)");
         addressLabel.setFont(new Font("Arial", Font.PLAIN, 18));
         addressLabel.setBounds(150, 400, 250, 30);
 
-         addressField = new JTextField();
+        addressField = new JTextField();
         addressField.setBounds(420, 400, 300, 35);
-        
-        
+
         JButton reserveButton = new JButton("Reserve");
         reserveButton.setFont(new Font("Arial", Font.BOLD, 16));
         reserveButton.setBounds(700, 475, 180, 40);
+     
+        reserveButton.addActionListener(e -> {
+        java.time.LocalDate pickup = java.time.LocalDate.now();
+        java.time.LocalDate dropoff = java.time.LocalDate.now().plusDays(1);
+
+    String resNum = reserveCar(pickup, dropoff);
+    if (resNum != null) {
+        goToReservationDetailsFrame();
+    }
+});
+        
+        add(reserveButton);
 
         statusLabel = new JLabel("");
         statusLabel.setFont(new Font("Arial", Font.BOLD, 15));
         statusLabel.setBounds(420, 470, 300, 30);
-
-        reserveButton.addActionListener(e -> reserveCar());
 
         add(titleLabel);
 
@@ -108,136 +118,125 @@ public class Reservation extends JPanel {
 
         add(addressLabel);
         add(addressField);
-        
-                    
-        add(reserveButton);
 
         add(statusLabel);
 
         setVisible(true);
     }
 
-   public void reserveCar() {
+    public String reservationDetails;
+
+    public String reserveCar(java.time.LocalDate d1, java.time.LocalDate d2) {
         String name = nameField.getText();
         this.customerName = name;
+        
         String contact = contactField.getText();
         String email = emailField.getText();
         String licensenum = licenseField.getText();
         String address = addressField.getText();
-        
-        if (name.isEmpty() || contact.isEmpty()
-                || licensenum.isEmpty()) {
 
+        if (name.isEmpty() || contact.isEmpty() || licensenum.isEmpty()) {
             statusLabel.setText("Please fill in the fields!");
-            return;
+            return null;
         }
-if (email == null || email.trim().isEmpty()) {
-    email = "N/A";
-}
+        if (email == null || email.trim().isEmpty()) {
+            email = "N/A";
+        }
+        if (address == null || address.trim().isEmpty()) {
+            address = "N/A";
+        }
 
-if (address == null || address.trim().isEmpty()) {
-    address = "N/A";
-}
-        String reservationNumber = "CR-" + reservationCounter++;
-        
-        try {
-            Connection conn = DBConnection.getConnection();
+        try (Connection conn = DBConnection.getConnection()) {
+            
+            // dito yung maggegenerate ng ID hehehehehe
+            String getLastIdSql = "SELECT reservation_id FROM reservation ORDER BY reservation_id DESC LIMIT 1";
+            Statement stmt = conn.createStatement();
+            ResultSet rsLast = stmt.executeQuery(getLastIdSql);
+            int nextNumber = 1001;
+            if (rsLast.next()) {
+                String lastId = rsLast.getString("reservation_id");
+                nextNumber = Integer.parseInt(lastId.substring(3)) + 1;
+            }
+            this.reservationNumber = "CR-" + nextNumber;
 
-            String customerBookSql =
-                    "INSERT INTO customer_book(name, phone, email, drivers_license, address) "
-                    + "VALUES (?, ?, ?, ?, ?)";
-
-            PreparedStatement customerBookPst =
-                    conn.prepareStatement(customerBookSql, Statement.RETURN_GENERATED_KEYS);
-
+            // Insert customer record
+            String customerBookSql = "INSERT INTO customer_book(name, phone, email, drivers_license, address) VALUES (?, ?, ?, ?, ?)";
+            PreparedStatement customerBookPst = conn.prepareStatement(customerBookSql, Statement.RETURN_GENERATED_KEYS);
             customerBookPst.setString(1, name);
             customerBookPst.setString(2, contact);
             customerBookPst.setString(3, email);
             customerBookPst.setString(4, licensenum);
             customerBookPst.setString(5, address);
-
             customerBookPst.executeUpdate();
 
-            ResultSet rs = customerBookPst.getGeneratedKeys();
-            
-            int customerBookId = 0;
+            ResultSet rsCustomer = customerBookPst.getGeneratedKeys();
+            int customerBookId = rsCustomer.next() ? rsCustomer.getInt(1) : 0;
 
-            if (rs.next()) {
-                customerBookId = rs.getInt(1);
-            }
-
-            String reservationSql =
-                    "INSERT INTO reservation(reservation_id, cus_book_id, car_id, pickup_date, dropoff_date, car_status_id) "
-                    + "VALUES (?, ?, ?, CURDATE(), CURDATE(), ?)";
-
+            // Insert reservation
+            String reservationSql = "INSERT INTO reservation(reservation_id, cus_book_id, car_id, pickup_date, dropoff_date, car_status_id) VALUES (?, ?, ?, ?, ?, ?)";
             PreparedStatement reservationPst = conn.prepareStatement(reservationSql);
-
             reservationPst.setString(1, reservationNumber);
             reservationPst.setInt(2, customerBookId);
             reservationPst.setString(3, carId);
-            reservationPst.setInt(4, 2);
-
+            reservationPst.setDate(4, java.sql.Date.valueOf(d1));
+            reservationPst.setDate(5, java.sql.Date.valueOf(d2));
+            reservationPst.setInt(6, 2);
             reservationPst.executeUpdate();
 
-            String updateCarSql = "UPDATE car SET car_status_id = ? WHERE car_id = ?";
-
-            PreparedStatement updateCarPst = conn.prepareStatement(updateCarSql);
-
+            // Update car status
+            PreparedStatement updateCarPst = conn.prepareStatement("UPDATE car SET car_status_id = ? WHERE car_id = ?");
             updateCarPst.setInt(1, 2);
             updateCarPst.setString(2, carId);
-
             updateCarPst.executeUpdate();
-            
-             conn.close();
 
+            String details
+                    = "RESERVATION DETAILS\n\n"
+                    + "Reservation ID     : " + reservationNumber + "\n\n"
+                    + "Customer Name      : " + name + "\n\n"
+                    + "Contact Number     : " + contact + "\n\n"
+                    + "Email Address      : " + email + "\n\n"
+                    + "Driver's Address   : " + address + "\n\n"
+                    + "Driver's License Number  : " + licensenum + "\n\n";
+
+    
+            this.reservationDetails = details;
+
+            statusLabel.setText("Reservation Successful!");
+            return this.reservationNumber;
         } catch (Exception ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
-            return;
+            return null;
         }
-
-        
-        String details =
-                "RESERVATION DETAILS\n\n"
-                + "Reservation ID     : " + reservationNumber + "\n\n"
-                + "Vehicle ID         : " + carId + "\n\n"
-                + "Vehicle Name       : " + this.name + "\n\n"
-                + "Plate Number       : " + this.plate + "\n\n"
-                + "Rate               : " + this.rate + "\n\n"
-                + "Customer Name      : " + name + "\n\n"
-                + "Contact Number     : " + contact + "\n\n"
-                + "Email Address      : " + email + "\n\n"
-                + "Driver's Address   : " + address + "\n\n"
-                + "Driver's License Number  : " + licensenum + "\n\n";
+    }
+    
+    
+    
+        public void goToReservationDetailsFrame() {
+        ReservationDetailsFrame rdf = new ReservationDetailsFrame(
+            reservationDetails,
+            reservationNumber,
+            rate,
+            name,
+            plate,
+            customerName,
+            carId,
+            this
+        );
 
         JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
-       Container background = mainFrame.getContentPane();
+        Container background = mainFrame.getContentPane();
+        background.remove(this);
+        background.add(rdf); 
+        background.revalidate();
+        background.repaint();
+    }
 
-       background.remove(this);
+    public String getCarId() {
+        return carId;
+    }
 
-       ReservationDetailsFrame rdf
-               = new ReservationDetailsFrame(
-                       details,
-                       reservationNumber,
-                       this.rate,
-                       this.name,
-                       this.plate,
-                       this.customerName,
-                       this.carId
-               );
-       rdf.setBounds(900, 175, 600, 600);
-
-       background.add(rdf);
-
-       background.revalidate();
-       background.repaint();
-
-        statusLabel.setText("Reservation Successful!");
-
-        nameField.setText("");
-        contactField.setText("");
-        licenseField.setText("");
-        System.out.println("Vehicle Name = " + this.name);
-        System.out.println("Customer Name = " + this.customerName);
+    public String getReservationDetails() {
+        return reservationDetails;
     }
 }

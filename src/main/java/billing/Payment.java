@@ -12,6 +12,10 @@ import java.time.*;
 import javax.swing.*;
 import prevention.*;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+
 /**
  *
  * @author Mickey
@@ -82,64 +86,111 @@ class Payment extends JPanel implements ActionListener{
         btnCashless.addActionListener(this);
     }
 
-    @Override
     public void actionPerformed(ActionEvent e) {
-
+        
+        ///CASHHHHH
         if (e.getSource() == btnCash) {
-            JOptionPane.showMessageDialog(null,
-                    "Please proceed to the cashier for cash payment.");
-            JFrame current = (JFrame) SwingUtilities.getWindowAncestor(this);
-            current.dispose();
+        try (Connection conn = DriverManager.getConnection(
+            "jdbc:mysql://localhost:3306/db_rentalcar", "root", "")) {
 
-            carrentalsystemmain.Main.openHomepage();
-        } 
-        else if (e.getSource() == btnCashless) {
-//            CashlessPayment cp = new CashlessPayment();
-//            cp.setVisible(true);
-            JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
-            Container background = mainFrame.getContentPane();
-            background.remove(this);
-            System.out.println("RATE = " + rate);
-            CashlessPayment ap = new CashlessPayment(
-                    resNum,
-                    pickDeets,
-                    dropDeets,
-                    daysTotal,
-                    name,
-                    plate,
-                    rate,
-                    reservationNumber,
-                    customerName,
-                    pickDate,
-                    dropDate
-            );
-            ap.setBounds(800, 250, 1366, 768);
-            background.add(ap);
-            background.revalidate();
-            background.repaint();
-        }else if (e.getSource()==btnBack){
-            JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
-            Container background = mainFrame.getContentPane();
-            background.remove(this);
-            System.out.println("RATE = " + rate);
-            PaymentReceipt ap = new PaymentReceipt(
-                    resNum,
-                    pickDeets,
-                    dropDeets,
-                    daysTotal,
-                    name,
-                    plate,
-                    rate,
-                    reservationNumber,
-                    customerName,
-                    pickDate,
-                    dropDate
-            );
-            ap.setBounds(800, 250,1366, 768);
-            background.add(ap);
-            background.revalidate();
-            background.repaint();
+            String sql = "INSERT INTO payments (reservation_id, amount, method_pay_id, pay_status_id) VALUES (?, ?, ?, ?)";
+            PreparedStatement ps = conn.prepareStatement(sql);
+
+           
+            double amount = daysTotal * Double.parseDouble(rate.replace("P", ""));
+
+            ps.setString(1, reservationNumber);
+            ps.setDouble(2, amount);
+            ps.setInt(3, 1); 
+            ps.setInt(4, 1); 
+
+            int rows = ps.executeUpdate();
+            if (rows > 0) {
+                JOptionPane.showMessageDialog(null, "Cash payment saved successfully!");
+            } else {
+                JOptionPane.showMessageDialog(null, "Payment not saved!");
+                return;
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Database error: " + ex.getMessage());
+            return;
         }
+
+        JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+        Container contentPane = mainFrame.getContentPane();
+        contentPane.remove(this);
+        
+        SummaryReceipt summaryPanel = new SummaryReceipt(
+            resNum,
+            pickDeets,
+            dropDeets,
+            daysTotal,
+            name,
+            plate,
+            rate,
+            reservationNumber,
+            "Cash",       
+            customerName,
+            pickDate,
+            dropDate
+        );
+
+                summaryPanel.setBounds(800, 250, 600, 600);
+                contentPane.add(summaryPanel);
+                contentPane.revalidate();
+                contentPane.repaint();
+            }
+    
+    ///CASHHLESSSSSSS
+    else if (e.getSource() == btnCashless) {
+        try (Connection conn = DriverManager.getConnection(
+            "jdbc:mysql://localhost:3306/db_rentalcar", "root", "")) {
+
+            String sql = "INSERT INTO payments (reservation_id, amount, method_pay_id, pay_status_id) VALUES (?, ?, ?, ?)";
+            PreparedStatement ps = conn.prepareStatement(sql);
+
+            double amount = daysTotal * Double.parseDouble(rate.replace("P", ""));
+            
+            ps.setString(1, reservationNumber);
+            ps.setDouble(2, amount);
+            ps.setInt(3, 2); 
+            ps.setInt(4, 1); 
+
+            ps.executeUpdate();
+            JOptionPane.showMessageDialog(null, "Cashless payment saved successfully!");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Database error: " + ex.getMessage());
+        }
+
+        JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+        Container background = mainFrame.getContentPane();
+        background.remove(this);
+
+        CashlessPayment ap = new CashlessPayment(
+            resNum, pickDeets, dropDeets, daysTotal, name, plate, rate,
+            reservationNumber, customerName, pickDate, dropDate
+        );
+        ap.setBounds(800, 250, 1366, 768);
+        background.add(ap);
+        background.revalidate();
+        background.repaint();
+    } 
+    else if (e.getSource() == btnBack) {
+        JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+        Container background = mainFrame.getContentPane();
+        background.remove(this);
+
+        PaymentReceipt ap = new PaymentReceipt(
+            resNum, pickDeets, dropDeets, daysTotal, name, plate, rate,
+            reservationNumber, customerName, pickDate, dropDate
+        );
+        ap.setBounds(800, 250, 1366, 768);
+        background.add(ap);
+        background.revalidate();
+        background.repaint();
     }
+}
     
 }

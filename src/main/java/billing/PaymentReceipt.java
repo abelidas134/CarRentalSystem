@@ -10,6 +10,10 @@ import java.time.*;
 import javax.swing.*;
 import javax.swing.BorderFactory;
 
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 /**
  *
  * @author Mickey
@@ -200,30 +204,60 @@ class PaymentReceipt extends JPanel implements ActionListener{
     }
 
     @Override
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource()==btnContinue){
-            JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
-            Container background = mainFrame.getContentPane();
-            background.remove(this);
-            Payment ap = new Payment(
-                    resNum,
-                    pickDeets,
-                    dropDeets,
-                    daysTotal,
-                    name,
-                    plate,
-                    rate,
-                    reservationNumber,
-                    customerName,
-                    pickDate,
-                    dropDate
-                    
-            
-            );
-            ap.setBounds(800, 250, 1366, 768);
-            background.add(ap);
-            background.revalidate();
-            background.repaint();
+public void actionPerformed(ActionEvent e) {
+    if (e.getSource() == btnContinue) {
+     
+        double rentalRate = Double.parseDouble(rate.replace("P", ""));
+        double subTotal = 400 + 600 + (rentalRate * 0.50) + (rentalRate * daysTotal);
+        double tax = subTotal * 0.12;
+        double totalAmount = subTotal + tax;
+
+        try (Connection conn = DriverManager.getConnection(
+            "jdbc:mysql://localhost:3306/db_rentalcar", "root", "")) {
+
+            String sql = "INSERT INTO payments (reservation_id, amount, method_pay_id, pay_status_id) VALUES (?, ?, ?, ?)";
+            PreparedStatement ps = conn.prepareStatement(sql);
+
+            ps.setString(1, reservationNumber);
+            ps.setDouble(2, totalAmount);
+            ps.setInt(3, 1); 
+            ps.setInt(4, 1); 
+
+            int rows = ps.executeUpdate();
+            if (rows > 0) {
+                JOptionPane.showMessageDialog(null, "Payment confirmed and saved!");
+            } else {
+                JOptionPane.showMessageDialog(null, "Payment not saved!");
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Database error: " + ex.getMessage());
+            return;
         }
+
+
+    
+        JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+        Container background = mainFrame.getContentPane();
+        background.remove(this);
+
+        Payment ap = new Payment(
+            resNum,
+            pickDeets,
+            dropDeets,
+            daysTotal,
+            name,
+            plate,
+            rate,
+            reservationNumber,
+            customerName,
+            pickDate,
+            dropDate
+        );
+        ap.setBounds(800, 250, 1366, 768);
+        background.add(ap);
+        background.revalidate();
+        background.repaint();
     }
+}
 }

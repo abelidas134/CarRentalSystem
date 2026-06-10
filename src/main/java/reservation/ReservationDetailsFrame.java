@@ -20,24 +20,30 @@ import javax.swing.SwingUtilities;
  *
  * @author Mickey
  */
-public class ReservationDetailsFrame extends JPanel {
+    public class ReservationDetailsFrame extends JPanel {
 
     JTextArea detailsArea;
     String rate, name, plate, customerName, carId;
-        
+    private Reservation reservationPanel; 
+    
     public ReservationDetailsFrame(
-            String details,
-            String reservationNumber,
-            String rate,
-            String name,
-            String plate,
-            String customerName,
-            String carId) {
-            this.rate = rate;
-            this.name = name;
-            this.plate = plate;
-            this.customerName = customerName;
-            this.carId = carId;
+        String details,
+        String reservationNumber,
+        String rate,
+        String name,
+        String plate,
+        String customerName,
+        String carId,
+        Reservation reservationPanel 
+    ) 
+    
+    {
+        this.rate = rate;
+        this.name = name;
+        this.plate = plate;
+        this.customerName = customerName;
+        this.carId = carId;
+        this.reservationPanel = reservationPanel;
             
             
         setBounds(1000,100,600, 600);
@@ -63,24 +69,27 @@ public class ReservationDetailsFrame extends JPanel {
         closeButton.setBounds(300, 460, 120, 40);
 
         closeButton.addActionListener(e -> {
-            JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
-            Container background = mainFrame.getContentPane();
-            background.remove(this);
-            ResNumLog ap
-                    = new ResNumLog(
-                            reservationNumber,
-                            rate,
-                            name,
-                            plate,
-                            customerName,
-                            details,
-                            carId
-                    );
-            ap.setBounds(850, 200, 1366, 768);
-            background.add(ap);
-            background.revalidate();
-            background.repaint();
-        });
+        JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+        Container background = mainFrame.getContentPane();
+        background.remove(this);
+
+         ResNumLog ap = new ResNumLog(
+            reservationNumber,
+            rate,
+            name,
+            plate,
+            customerName,
+            details,
+            carId,
+            reservationPanel 
+        );
+
+
+        ap.setBounds(850, 200, 1366, 768);
+        background.add(ap);
+        background.revalidate();
+        background.repaint();
+    });
         
         backButton.addActionListener(e -> {
             JFrame current = (JFrame) SwingUtilities.getWindowAncestor(this);
