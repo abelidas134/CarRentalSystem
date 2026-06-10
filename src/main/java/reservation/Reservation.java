@@ -61,7 +61,7 @@ public class Reservation extends JPanel {
         contactField = new JTextField();
         contactField.setBounds(420, 190, 300, 35);
 
-        JLabel emailLabel = new JLabel("Email Address (Optional)");
+        JLabel emailLabel = new JLabel("Email Address:");
         emailLabel.setFont(new Font("Arial", Font.PLAIN, 18));
         emailLabel.setBounds(150, 260, 250, 30);
 

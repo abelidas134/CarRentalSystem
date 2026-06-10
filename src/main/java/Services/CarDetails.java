@@ -30,8 +30,6 @@ public class CarDetails extends JFrame {
         addRow("RATE:", rate, k, v, y, pane, h); y += gap;
         addRow("STATUS:", status, k, v, y, pane, h); y += gap;
         addRow("CONDITION:","Good", k, v, y, pane, h); y += gap;
-//        addRow("LAST MAINTENANCE:", "N/A", k, v, y, pane, h); y += gap;
-//        addRow("NEXT SERVICE DUE:", "N/A", k, v, y, pane, h); y += gap;
         
                 
         JButton btnclose = new JButton("Close");

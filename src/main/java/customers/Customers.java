@@ -167,7 +167,7 @@ public class Customers extends JPanel implements Searchable {
              
              String email = txtEmail.getText().trim();
                 if(email.isEmpty()){
-                     email = "N/A"; }
+                     email = null; }
              String address = txtAddress.getText().trim();
                 if (address.isEmpty()){
                     address = "N/A"; }
