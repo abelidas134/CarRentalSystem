@@ -105,6 +105,11 @@ public class Vehicle extends JPanel{
             String status = (String)model.getValueAt(row, 3);
             String rate = (String)model.getValueAt(row, 4);
             
+            if (!status.equalsIgnoreCase("AVAILABLE")) { JOptionPane.showMessageDialog( this,
+                "This vehicle cannot be booked because it is currently " + status + ".",
+                "Vehicle Not Available", JOptionPane.WARNING_MESSAGE
+        ); return;
+    }              
             JFrame current = (JFrame) SwingUtilities.getWindowAncestor(this);
             current.dispose();
 

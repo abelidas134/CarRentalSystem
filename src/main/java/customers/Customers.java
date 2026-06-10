@@ -145,6 +145,20 @@ public class Customers extends JPanel implements Searchable {
         UIManager.put("OptionPane.messageFont",new Font("Poppins", Font.BOLD, 14));
         
         btnAdd.addActionListener(e -> {
+            if (txtName.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Please enter the customer's name."); return; }
+            if (txtPhone.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Please enter the phone number."); return; }
+            if (txtLicense.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Please enter the driver's license."); return; }
+            
+            String phone = txtPhone.getText().trim();
+                if (!phone.matches("\\d{11}")) {
+                    JOptionPane.showMessageDialog(this, "Phone number must contain exactly 11 digits.",
+                "Invalid Phone Number", JOptionPane.WARNING_MESSAGE);
+        return;
+    }
+
         try {
              Connection conn = DBConnection.getConnection();
 
@@ -154,15 +168,18 @@ public class Customers extends JPanel implements Searchable {
              String email = txtEmail.getText().trim();
                 if(email.isEmpty()){
                      email = "N/A"; }
+             String address = txtAddress.getText().trim();
+                if (address.isEmpty()){
+                    address = "N/A"; }
 
          PreparedStatement pst = conn.prepareStatement(sql,
                  Statement.RETURN_GENERATED_KEYS);
 
          pst.setString(1, txtName.getText());
          pst.setString(2, txtPhone.getText());
-         pst.setString(3, txtEmail.getText());
+         pst.setString(3, email);
          pst.setString(4, txtLicense.getText());
-         pst.setString(5, txtAddress.getText()); 
+         pst.setString(5, address); 
 
          pst.executeUpdate();
          ResultSet rs = pst.getGeneratedKeys();
@@ -180,20 +197,33 @@ public class Customers extends JPanel implements Searchable {
                 + "Phone: " + txtPhone.getText().trim() + "\n"
                 + "Email: " + email + "\n"
                 + "License: " + txtLicense.getText().trim() + "\n"
-                + "Address: " + txtAddress.getText().trim(),
+                + "Address: " + address,
                 "Customer Added",
                 JOptionPane.INFORMATION_MESSAGE
         );
         clearFields();
     } catch (Exception ex) {
         ex.printStackTrace();
-        JOptionPane.showMessageDialog(null, "Error: " + ex.getMessage());
-     }
+        String message = ex.getMessage();
+
+        if (message.contains("Duplicate entry")) { JOptionPane.showMessageDialog(null,
+                "This customer already exists.", "Duplicate Record", JOptionPane.WARNING_MESSAGE);
+            } else if (message.contains("Data truncated")) { JOptionPane.showMessageDialog(null,
+                "One of the values entered is invalid.", "Invalid Input", JOptionPane.WARNING_MESSAGE);
+            } else { JOptionPane.showMessageDialog(null,"Unable to save customer information.", "Database Error", JOptionPane.ERROR_MESSAGE);
+         }
+            }
   });
         
       btnUpdate.addActionListener(e -> {
         if (txtId.getText().trim().isEmpty()) {
-        JOptionPane.showMessageDialog(null, "Customer ID is required.");
+        JOptionPane.showMessageDialog(null, "Customer ID is required.","Warning",JOptionPane.WARNING_MESSAGE);
+        return;
+    }
+         String phone = txtPhone.getText().trim();
+                if (!phone.isEmpty() && !phone.matches("\\d{11}")) {
+                    JOptionPane.showMessageDialog(this, "Phone number must contain exactly 11 digits.",
+                "Invalid Phone Number", JOptionPane.WARNING_MESSAGE);
         return;
     }
     try {
@@ -230,6 +260,8 @@ public class Customers extends JPanel implements Searchable {
         String newEmail = txtEmail.getText().trim().isEmpty()
                 ? currentEmail
                 : txtEmail.getText().trim();
+          if (newEmail == null || newEmail.trim().isEmpty()) {
+            newEmail = "N/A"; }
 
         String newLicense = txtLicense.getText().trim().isEmpty()
                 ? currentLicense
@@ -238,6 +270,8 @@ public class Customers extends JPanel implements Searchable {
         String newAddress = txtAddress.getText().trim().isEmpty()
                 ? currentAddress
                 : txtAddress.getText().trim();
+         if (newAddress == null || newAddress.trim().isEmpty()) {
+            newAddress = "N/A"; }
 
         String updateSql = "UPDATE customer_book "
                          + "SET name = ?, phone = ?, email = ? , drivers_license = ?, address = ? "

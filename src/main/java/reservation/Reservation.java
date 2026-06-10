@@ -130,15 +130,20 @@ public class Reservation extends JPanel {
         String name = nameField.getText();
         this.customerName = name;
         
-        String contact = contactField.getText();
-        String email = emailField.getText();
-        String licensenum = licenseField.getText();
-        String address = addressField.getText();
+        String contact = contactField.getText().trim();
+        String email = emailField.getText().trim();
+        String licensenum = licenseField.getText().trim();
+        String address = addressField.getText().trim();
 
         if (name.isEmpty() || contact.isEmpty() || licensenum.isEmpty()) {
             statusLabel.setText("Please fill in the fields!");
             return null;
         }
+        if (!contact.matches("\\d{11}")) {
+                JOptionPane.showMessageDialog(this, "Phone number must contain exactly 11 digits.",
+            "Invalid Phone Number", JOptionPane.WARNING_MESSAGE);
+            return null;
+}
         if (email == null || email.trim().isEmpty()) {
             email = "N/A";
         }
@@ -148,7 +153,7 @@ public class Reservation extends JPanel {
 
         try (Connection conn = DBConnection.getConnection()) {
             
-            // dito yung maggegenerate ng ID hehehehehe
+            // Generate ID
             String getLastIdSql = "SELECT reservation_id FROM reservation ORDER BY reservation_id DESC LIMIT 1";
             Statement stmt = conn.createStatement();
             ResultSet rsLast = stmt.executeQuery(getLastIdSql);
