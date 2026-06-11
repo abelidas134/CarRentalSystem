@@ -153,15 +153,37 @@ public class Reservation extends JPanel {
         try (Connection conn = DBConnection.getConnection()) {
             
             // Generate ID
-            String getLastIdSql = "SELECT reservation_id FROM reservation ORDER BY reservation_id DESC LIMIT 1";
+//            String getLastIdSql = "SELECT reservation_id FROM reservation ORDER BY reservation_id DESC LIMIT 1";
+//            Statement stmt = conn.createStatement();
+//            ResultSet rsLast = stmt.executeQuery(getLastIdSql);
+//            int nextNumber = 1001;
+//            if (rsLast.next()) {
+//                String lastId = rsLast.getString("reservation_id");
+//                nextNumber = Integer.parseInt(lastId.replace("CR-", "")) + 1;
+//            }
+            String getLastIdSql
+                    = "SELECT IFNULL(MAX(CAST(REPLACE(reservation_id, 'CR-', '') AS UNSIGNED)), 0) AS max_id FROM reservation";
+
             Statement stmt = conn.createStatement();
             ResultSet rsLast = stmt.executeQuery(getLastIdSql);
-            int nextNumber = 1001;
+
+            int maxId = 0;
+
             if (rsLast.next()) {
-                String lastId = rsLast.getString("reservation_id");
-                nextNumber = Integer.parseInt(lastId.replace("CR-", "")) + 1;
+                maxId = rsLast.getInt("max_id");
             }
+
+            int nextNumber;
+
+            if (maxId == 0) {
+                nextNumber = 1001;  
+            } else {
+                nextNumber = maxId + 1;
+            }
+
             this.reservationNumber = "CR-" + nextNumber;
+            
+            
             
                         // Insert customer record
             String customerBookSql = "INSERT INTO customer_book(name, phone, email, drivers_license, address) VALUES (?, ?, ?, ?, ?)";

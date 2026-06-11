@@ -315,39 +315,55 @@ public class Customers extends JPanel implements Searchable {
 });
         
       btnDelete.addActionListener(e -> {
-            if(txtId.getText().isEmpty()){
-                JOptionPane.showMessageDialog(null, "ID is required to delete.","Error", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-          try {
-             int id = Integer.parseInt(txtId.getText().trim());
-             Connection conn = DBConnection.getConnection();
-            String sql =
-                "DELETE FROM customer_book WHERE cus_book_id = ?";
-            PreparedStatement pst =
-                conn.prepareStatement(sql);
-                    pst.setInt(1, id);
+              try (Connection conn = DBConnection.getConnection()) {
 
-                int rowsDeleted = pst.executeUpdate();
-                    conn.close();
+                  int id = Integer.parseInt(txtId.getText().trim());
 
-             if (rowsDeleted > 0) {
-                JOptionPane.showMessageDialog(null, "Customer deleted successfully."
-            );
-            clearFields();
-        } else {
-            JOptionPane.showMessageDialog(null, "Customer not found."
-            );
-        }
-    } catch (NumberFormatException ex) {
-         JOptionPane.showMessageDialog(null, "Customer ID must be a number."
-        );
-    } catch (Exception ex) {
-        ex.printStackTrace();
-        JOptionPane.showMessageDialog(null, "Error: " + ex.getMessage()
-        );
-    }
-        });
+                  // 1. get all reservations of this customer
+                  String getReservation
+                          = "SELECT reservation_id FROM reservation WHERE cus_book_id = ?";
+
+                  PreparedStatement pstGet = conn.prepareStatement(getReservation);
+                  pstGet.setInt(1, id);
+                  ResultSet rs = pstGet.executeQuery();
+
+                  // 2. delete payments first (per reservation)
+                  while (rs.next()) {
+                      String reservationId = rs.getString("reservation_id");
+
+                      PreparedStatement pstPayment
+                              = conn.prepareStatement("DELETE FROM payments WHERE reservation_id = ?");
+                      pstPayment.setString(1, reservationId);
+                      pstPayment.executeUpdate();
+                  }
+
+                  // 3. delete reservations
+                  PreparedStatement pstRes
+                          = conn.prepareStatement("DELETE FROM reservation WHERE cus_book_id = ?");
+                  pstRes.setInt(1, id);
+                  pstRes.executeUpdate();
+
+                  // 4. delete customer
+                  PreparedStatement pstCus
+                          = conn.prepareStatement("DELETE FROM customer_book WHERE cus_book_id = ?");
+                  pstCus.setInt(1, id);
+
+                  int rowsDeleted = pstCus.executeUpdate();
+
+                  if (rowsDeleted > 0) {
+                      JOptionPane.showMessageDialog(null, "Customer deleted successfully.");
+                      clearFields();
+                  } else {
+                      JOptionPane.showMessageDialog(null, "Customer not found.");
+                  }
+
+              } catch (NumberFormatException ex) {
+                  JOptionPane.showMessageDialog(null, "Customer ID must be a number.");
+              } catch (Exception ex) {
+                  ex.printStackTrace();
+                  JOptionPane.showMessageDialog(null, "Error: " + ex.getMessage());
+              }
+      });
 
         btnClear.addActionListener(e -> clearFields());
 
