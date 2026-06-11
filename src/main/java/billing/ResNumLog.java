@@ -13,6 +13,8 @@
     import javax.swing.*;
     import reservation.*;
     import java.sql.ResultSet;
+    import vehicle.Vehicle;
+
 
 
     import java.sql.Connection;
@@ -148,27 +150,52 @@
                             "Error",
                             JOptionPane.ERROR_MESSAGE);
                 }
-            } else if (e.getSource()==btnBack){
-                JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
-                Container background = mainFrame.getContentPane();
+            } else if (e.getSource() == btnBack) {
+    int confirm = JOptionPane.showConfirmDialog(this,
+        "Going back will permanently delete your reservation and free the car. Continue?",
+        "Confirm Deletion",
+        JOptionPane.YES_NO_OPTION);
 
-                background.remove(this);
+    if (confirm == JOptionPane.YES_OPTION) {
+        try (Connection conn = DBConnection.getConnection()) {
+   
+            String deleteSql = "DELETE FROM reservation WHERE reservation_id = ?";
+            PreparedStatement psDelete = conn.prepareStatement(deleteSql);
+            psDelete.setString(1, reservationNumber);
+            psDelete.executeUpdate();
 
-                ReservationDetailsFrame rdf = new ReservationDetailsFrame(
-                details,
-                reservationNumber,
-                rate,
-                name,
-                plate,
-                customerName,
-                carId,
-                reservationPanel
-            );
-                rdf.setBounds(900, 175, 600, 600);
-                background.add(rdf);
-                background.revalidate();
-                background.repaint();
-            }
+
+            String updateSql = "UPDATE car SET car_status_id = (SELECT car_status_id FROM car_status WHERE car_status = 'AVAILABLE') WHERE car_id = ?";
+            PreparedStatement psUpdate = conn.prepareStatement(updateSql);
+            psUpdate.setString(1, carId);
+            psUpdate.executeUpdate();
+
+            JOptionPane.showMessageDialog(this,
+                "Reservation deleted and car status reset to AVAILABLE.",
+                "Success",
+                JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                "Error deleting reservation or updating car status: " + ex.getMessage(),
+                "DB Error",
+                JOptionPane.ERROR_MESSAGE);
+        }
+
+        JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+        Container background = mainFrame.getContentPane();
+        background.remove(this);
+
+        Vehicle vehiclePanel = new Vehicle();
+        vehiclePanel.setBounds(600, 200, 1000, 600);
+        background.add(vehiclePanel);
+        background.revalidate();
+        background.repaint();
+    }
+}
         }
 
     }
+
+
+

@@ -8,13 +8,15 @@ import billing.ResNumLog;
 import carrentalsystemmain.FoundationFrame;
 import java.awt.Container;
 import java.awt.Font;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
+import vehicle.Vehicle;
+
+
+import database.DBConnection;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
 
 /**
  *
@@ -92,12 +94,44 @@ import javax.swing.SwingUtilities;
     });
         
         backButton.addActionListener(e -> {
-            JFrame current = (JFrame) SwingUtilities.getWindowAncestor(this);
-            current.dispose();
+    int confirm = JOptionPane.showConfirmDialog(this,
+        "Going back will permanently delete your reservation and free the car. Continue?",
+        "Confirm Deletion",
+        JOptionPane.YES_NO_OPTION);
 
-            FoundationFrame ff = new FoundationFrame(new Reservation(rate, name, plate, carId));
+    if (confirm == JOptionPane.YES_OPTION) {
+        try (Connection conn = DBConnection.getConnection()) {
+         
+            String deleteSql = "DELETE FROM reservation WHERE reservation_id = ?";
+            PreparedStatement psDelete = conn.prepareStatement(deleteSql);
+            psDelete.setString(1, reservationNumber);
+            psDelete.executeUpdate();
+
         
-        });
+            String updateSql = "UPDATE car SET car_status_id = (SELECT car_status_id FROM car_status WHERE car_status = 'AVAILABLE') WHERE car_id = ?";
+            PreparedStatement psUpdate = conn.prepareStatement(updateSql);
+            psUpdate.setString(1, carId);
+            psUpdate.executeUpdate();
+
+            JOptionPane.showMessageDialog(this,
+                "Reservation deleted and car status reset to AVAILABLE.",
+                "Success",
+                JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                "Error deleting reservation or updating car status: " + ex.getMessage(),
+                "DB Error",
+                JOptionPane.ERROR_MESSAGE);
+        }
+
+ 
+        JFrame current = (JFrame) SwingUtilities.getWindowAncestor(this);
+        current.dispose();
+
+        FoundationFrame ff = new FoundationFrame(new Vehicle());
+    }
+});
 
         add(titleLabel);
         add(scrollPane);

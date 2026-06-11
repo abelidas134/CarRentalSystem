@@ -162,6 +162,7 @@ class Payment extends JPanel implements ActionListener{
         } catch (Exception ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(null, "Database error: " + ex.getMessage());
+            return;
         }
 
         JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);

@@ -98,7 +98,6 @@ public void actionPerformed(ActionEvent e) {
             JOptionPane.showMessageDialog(null, "Card payment saved successfully!");
         } catch (Exception ex) {
             ex.printStackTrace();
-            JOptionPane.showMessageDialog(null, "Database error: " + ex.getMessage());
         }
 
         JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
@@ -132,7 +131,6 @@ public void actionPerformed(ActionEvent e) {
             JOptionPane.showMessageDialog(null, "QR Code payment saved successfully!");
         } catch (Exception ex) {
             ex.printStackTrace();
-            JOptionPane.showMessageDialog(null, "Database error: " + ex.getMessage());
         }
         
     

@@ -116,58 +116,57 @@ public class ServiceTracking extends JPanel {
             }
         });
         
-        btnAdd.addActionListener(e -> {
-
-             String id = JOptionPane.showInputDialog("Vehicle ID:");
-            if (id == null) {
-                return;
-            }
-            if (id.trim().isEmpty()) {
-                return;
-            }
+       btnAdd.addActionListener(e -> {
+            String id = JOptionPane.showInputDialog("Vehicle ID:");
+            if (id == null || id.trim().isEmpty()) return;
 
             String plate = JOptionPane.showInputDialog("Plate Number:");
-            if (plate == null) {
-                return;
-            }
-            if (plate.trim().isEmpty()) {
-                return;
-            }
+            if (plate == null || plate.trim().isEmpty()) return;
 
             String name = JOptionPane.showInputDialog("Vehicle Name:");
-            if (name == null) {
-                return;
-            }
-            if (name.trim().isEmpty()) {
-                return;
-            }
+            if (name == null || name.trim().isEmpty()) return;
 
             String rate = JOptionPane.showInputDialog("Rate:");
-            if (rate == null) {
-                return;
-            }
-            if (rate.trim().isEmpty()) {
-                return;
-            }
-
-            model.addRow(new Object[]{id, plate, name, "AVAILABLE", "P" + rate});
+            if (rate == null || rate.trim().isEmpty()) return;
 
             try (Connection conn = DBConnection.getConnection()) {
+               
+                String checkSql = "SELECT COUNT(*) FROM car WHERE car_id = ? OR plate_no = ?";
+                PreparedStatement psCheck = conn.prepareStatement(checkSql);
+                psCheck.setString(1, id);
+                psCheck.setString(2, plate);
+                var rs = psCheck.executeQuery();
+
+                if (rs.next() && rs.getInt(1) > 0) {
+                    JOptionPane.showMessageDialog(null,
+                        "A vehicle with this ID or Plate Number already exists!",
+                        "Duplicate Entry",
+                        JOptionPane.ERROR_MESSAGE);
+                    return; 
+                }
+
+               
                 String sql = "INSERT INTO car (car_id, car_status_id, plate_no, car_name, rate) VALUES (?, ?, ?, ?, ?)";
                 PreparedStatement ps = conn.prepareStatement(sql);
                 ps.setString(1, id);
-                ps.setInt(2, 1); 
+                ps.setInt(2, 1);
                 ps.setString(3, plate);
                 ps.setString(4, name);
                 ps.setInt(5, Integer.parseInt(rate));
                 ps.executeUpdate();
+
+               
+                model.addRow(new Object[]{id, plate, name, "AVAILABLE", "P" + rate});
+                JOptionPane.showMessageDialog(null, "Vehicle added successfully!");
             } catch (Exception ex) {
                 ex.printStackTrace();
+                JOptionPane.showMessageDialog(null,
+                    "Error adding vehicle: " + ex.getMessage(),
+                    "DB Error",
+                    JOptionPane.ERROR_MESSAGE);
             }
-
-            JOptionPane.showMessageDialog(null, "Vehicle added successfully!");
         });
-        
+       
         btnDel.addActionListener(e -> {
 
           int row = vehicleTable.getSelectedRow();

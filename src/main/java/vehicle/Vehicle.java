@@ -58,7 +58,23 @@ public class Vehicle extends JPanel{
         btnbook.setBounds(650, 400, 150, 40);
         JButton btncancel = new JButton("Cancel");
         btncancel.setBounds(200,400,150,40);
-      
+        
+        
+        btndetails.addActionListener(e -> {
+    int row = table.getSelectedRow();
+    if (row == -1) {
+        JOptionPane.showMessageDialog(this, "Please select a vehicle first.", "No Selection", JOptionPane.WARNING_MESSAGE);
+        return;
+    }
+
+    String id = (String)model.getValueAt(row, 0);
+    String plate = (String)model.getValueAt(row, 1);
+    String name = (String)model.getValueAt(row, 2);
+    String status = (String)model.getValueAt(row, 3);
+    String rate = (String)model.getValueAt(row, 4);
+    new CarDetails(id, name, status, rate, plate);
+});
+        
         btncancel.addActionListener(e -> {
 
             JFrame currentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
@@ -79,42 +95,44 @@ public class Vehicle extends JPanel{
             mainFrame.setVisible(true);
         });
 
-        btndetails.addActionListener(e -> {
-            int row = table.getSelectedRow();
-            if (row == -1) {
-                JOptionPane.showMessageDialog(this, "Please select a vehicle first.", "No Selection", JOptionPane.WARNING_MESSAGE);
+        btnbook.addActionListener(e -> {
+    int row = table.getSelectedRow();
+    if (row == -1) {
+        JOptionPane.showMessageDialog(this,"Please select a vehicle first.", "No Selection", JOptionPane.WARNING_MESSAGE);
+        return;
+    }
+
+    String id = (String)model.getValueAt(row, 0);
+    String plate = (String)model.getValueAt(row, 1);
+    String name = (String)model.getValueAt(row, 2);
+    String rate = (String)model.getValueAt(row, 4);
+
+    try (Connection conn = DBConnection.getConnection()) {
+        PreparedStatement ps = conn.prepareStatement(
+            "SELECT s.car_status FROM car c JOIN car_status s ON c.car_status_id = s.car_status_id WHERE c.car_id = ?");
+        ps.setString(1, id);
+        ResultSet rs = ps.executeQuery();
+
+        if (rs.next()) {
+            String currentStatus = rs.getString("car_status");
+            if (!currentStatus.equalsIgnoreCase("AVAILABLE")) {
+                JOptionPane.showMessageDialog(this,
+                    "This vehicle cannot be booked because it is currently " + currentStatus + ".",
+                    "Vehicle Not Available", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            String id = (String)model.getValueAt(row, 0);
-            String plate = (String)model.getValueAt(row, 1);
-            String name = (String)model.getValueAt(row, 2);
-            String status = (String)model.getValueAt(row, 3);
-            String rate = (String)model.getValueAt(row, 4);
+        }
+    } catch (Exception ex) {
+        ex.printStackTrace();
+        JOptionPane.showMessageDialog(this, "Error checking car status.", "DB Error", JOptionPane.ERROR_MESSAGE);
+        return;
+    }
+    
+    JFrame current = (JFrame) SwingUtilities.getWindowAncestor(this);
+    current.dispose();
 
-                new CarDetails(id,name,status, rate, plate);
-           });
-       btnbook.addActionListener(e -> {
-           int row = table.getSelectedRow();
-           if (row == -1) {
-               JOptionPane.showMessageDialog(this,"Please select a vehicle first.", "No Selection", JOptionPane.WARNING_MESSAGE);
-               return;
-           }
-            String id = (String)model.getValueAt(row, 0);
-            String plate = (String)model.getValueAt(row, 1);
-            String name = (String)model.getValueAt(row, 2);
-            String status = (String)model.getValueAt(row, 3);
-            String rate = (String)model.getValueAt(row, 4);
-            
-            if (!status.equalsIgnoreCase("AVAILABLE")) { JOptionPane.showMessageDialog( this,
-                "This vehicle cannot be booked because it is currently " + status + ".",
-                "Vehicle Not Available", JOptionPane.WARNING_MESSAGE
-        ); return;
-    }              
-            JFrame current = (JFrame) SwingUtilities.getWindowAncestor(this);
-            current.dispose();
-
-            FoundationFrame ff = new FoundationFrame(new Reservation(rate, name, plate, id));
-           });
+    FoundationFrame ff = new FoundationFrame(new Reservation(rate, name, plate, id));
+});
        
                
         add(lblce);
