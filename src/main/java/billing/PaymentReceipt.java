@@ -213,30 +213,27 @@ public void actionPerformed(ActionEvent e) {
         double totalAmount = subTotal + tax;
 
         try (Connection conn = DriverManager.getConnection(
-            "jdbc:mysql://localhost:3306/db_rentalcar", "root", "")) {
+    "jdbc:mysql://localhost:3306/db_rentalcar", "root", "")) {
 
-            String sql = "INSERT INTO payments (reservation_id, amount, method_pay_id, pay_status_id) VALUES (?, ?, ?, ?)";
-            PreparedStatement ps = conn.prepareStatement(sql);
+    String sql = "INSERT INTO payments (reservation_id, amount, method_pay_id, pay_status_id) VALUES (?, ?, ?, ?)";
+    PreparedStatement ps = conn.prepareStatement(sql);
 
-            ps.setString(1, reservationNumber);
-            ps.setDouble(2, totalAmount);
-            ps.setInt(3, 1); 
-            ps.setInt(4, 1); 
+    ps.setString(1, reservationNumber);
+    ps.setDouble(2, totalAmount);
+    ps.setInt(3, 1);
+    ps.setInt(4, 1);
 
-            int rows = ps.executeUpdate();
-            if (rows > 0) {
-                JOptionPane.showMessageDialog(null, "Payment confirmed and saved!");
-            } else {
-                JOptionPane.showMessageDialog(null, "Payment not saved!");
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(null, "Database error: " + ex.getMessage());
-            return;
-        }
-
-
-    
+    int rows = ps.executeUpdate();
+    if (rows > 0) {
+        JOptionPane.showMessageDialog(null, "Payment confirmed and saved!");
+    } else {
+        JOptionPane.showMessageDialog(null, "Payment not saved!");
+    }
+} catch (Exception ex) {
+    ex.printStackTrace();
+    JOptionPane.showMessageDialog(null, "Database error: " + ex.getMessage());
+    return;
+}
         JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
         Container background = mainFrame.getContentPane();
         background.remove(this);

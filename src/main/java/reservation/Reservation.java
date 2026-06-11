@@ -15,8 +15,7 @@ import java.sql.Statement;
 
 public class Reservation extends JPanel {
 
-    static int reservationCounter = 1001;
-
+    
     JTextField nameField, contactField, emailField, licenseField, addressField;
     JLabel statusLabel;
     private String details;
@@ -160,11 +159,11 @@ public class Reservation extends JPanel {
             int nextNumber = 1001;
             if (rsLast.next()) {
                 String lastId = rsLast.getString("reservation_id");
-                nextNumber = Integer.parseInt(lastId.substring(3)) + 1;
+                nextNumber = Integer.parseInt(lastId.replace("CR-", "")) + 1;
             }
             this.reservationNumber = "CR-" + nextNumber;
-
-            // Insert customer record
+            
+                        // Insert customer record
             String customerBookSql = "INSERT INTO customer_book(name, phone, email, drivers_license, address) VALUES (?, ?, ?, ?, ?)";
             PreparedStatement customerBookPst = conn.prepareStatement(customerBookSql, Statement.RETURN_GENERATED_KEYS);
             customerBookPst.setString(1, name);
