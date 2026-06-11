@@ -1,0 +1,127 @@
+﻿CREATE database db_rentalcar;
+
+
+CREATE TABLE admin(
+admin_id INT PRIMARY KEY AUTO_INCREMENT,
+admin_user VARCHAR(11),
+Admin_pass VARCHAR (50)
+);
+
+
+CREATE TABLE customer(
+cus_id INT(11) PRIMARY KEY AUTO_INCREMENT,
+username VARCHAR (50),
+password VARCHAR (50)
+);
+
+
+CREATE TABLE customer_book(
+cus_book_id INT (11) PRIMARY KEY AUTO_INCREMENT,
+name VARCHAR (100)NOT NULL ,
+phone INT (15) NOT NULL,
+email VARCHAR(100) NOT NULL,
+drivers_license int (15) NOT NULL,
+address VARCHAR (100)
+);
+
+
+CREATE TABLE car_status (
+car_status_id INT(11) PRIMARY KEY AUTO_INCREMENT,
+car_status VARCHAR(30) NOT NULL
+); 
+
+
+CREATE TABLE car (
+car_id VARCHAR (10) PRIMARY KEY,
+car_status_id INT NOT NULL,
+plate_no VARCHAR (15) NOT NULL,
+car_name VARCHAR (100) NOT NULL,
+rate INT (11) NOT NULL,
+FOREIGN KEY (car_status_id) REFERENCES car_status(car_status_id)
+);
+
+CREATE TABLE Car_Maintenance_History (
+    history_id INT PRIMARY KEY AUTO_INCREMENT,
+    car_id VARCHAR(10),
+    repair_date VARCHAR(50) NOT NULL,
+    repairing VARCHAR(255) NOT NULL,
+    next_service_date VARCHAR(50) NOT NULL,
+    FOREIGN KEY (car_id) REFERENCES car(car_id)
+);
+
+
+CREATE TABLE reservation (
+    reservation_id VARCHAR(20) PRIMARY KEY,
+    cus_book_id INT (11),
+    car_id VARCHAR(10),
+    pickup_date DATE NOT NULL,
+    dropoff_date DATE NOT NULL,
+    car_status_id INT(11),
+
+
+   FOREIGN KEY (cus_book_id) REFERENCES customer_book(cus_book_id),
+    FOREIGN KEY (car_id) REFERENCES car(car_id),
+    FOREIGN KEY (car_status_id) REFERENCES car_status(car_status_id)
+);
+
+CREATE TABLE Method_of_Payment (
+    method_pay_id INT(10)PRIMARY KEY AUTO_INCREMENT,
+    pay_methods VARCHAR(10)
+   );
+
+CREATE TABLE payment_status(
+pay_status_id INT(10) PRIMARY KEY AUTO_INCREMENT,
+status_pay VARCHAR(10)
+   );
+
+CREATE TABLE payments (
+pay_id INT(10) PRIMARY KEY AUTO_INCREMENT,
+reservation_id VARCHAR(10),
+amount DECIMAL(10,2),
+method_pay_id INT,
+pay_status_id INT,
+
+
+FOREIGN KEY (reservation_id)
+REFERENCES reservation(reservation_id),
+
+
+FOREIGN KEY (method_pay_id)
+REFERENCES method_of_payment(method_pay_id),
+
+
+FOREIGN KEY (pay_status_id)
+REFERENCES payment_status(pay_status_id)
+); 
+
+
+INSERT INTO admin(admin_user,admin_pass)
+VALUES( 'admin123', 0000);
+
+
+INSERT INTO customer(username,password)
+VALUES( 'user123', 0000);
+
+
+INSERT INTO car_status (car_status)
+VALUES ('AVAILABLE'), ('RESERVED'), ('RENTED'), ('UNDER MAINTENANCE');
+
+
+INSERT INTO method_of_payment (method_pay_id, pay_methods)
+VALUES (1, 'Cash'), (2, 'Card'), (3, 'QR Code');
+
+
+INSERT INTO payment_status (pay_status_id, status_pay)
+VALUES (1, 'PAID'), (2, 'UNPAID');
+
+
+ALTER TABLE customer_book
+ADD UNIQUE (phone);
+
+
+ALTER TABLE customer_book
+ADD UNIQUE (drivers_license);
+
+
+ALTER TABLE customer_book
+ADD UNIQUE (email);
